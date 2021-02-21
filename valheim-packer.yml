@@ -1,0 +1,6 @@
+---
+- name: Install vhserver
+  hosts: all
+  roles:
+    - valheim-packer
+  become: yes

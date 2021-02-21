@@ -1,0 +1,5 @@
+instance_image="Ubuntu 18.04"
+instance_type="b2-7"
+instance_name="Serveur 1"
+key_pair=""
+game=""

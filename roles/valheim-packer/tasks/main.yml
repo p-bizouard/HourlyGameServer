@@ -1,0 +1,96 @@
+---
+- name: Check if i386 is enabled
+  shell: dpkg --print-foreign-architectures | grep i386
+  register: result_i386_check
+  changed_when: result_i386_check.rc == 1
+  failed_when: result_i386_check.rc > 1
+
+- name: Enable i386 architecture
+  command: dpkg --add-architecture i386
+  when: result_i386_check.rc == 1
+
+- name: Ensure apt cache is up to date
+  apt: update_cache=yes
+  when: result_i386_check.rc == 1
+
+- name: accept steam license
+  debconf:
+    name: "steam"
+    question: "steam/question"
+    value: "I AGREE"
+    vtype: "select"
+
+- name: Wait for /var/lib/dpkg/lock-frontend to be released   
+  shell: while lsof /var/lib/dpkg/lock-frontend ; do sleep 10; done;
+
+- name: Install basic utilities
+  apt:
+    name:
+      - zsh
+      - curl
+      - wget
+      - file
+      - tar
+      - bzip2
+      - gzip
+      - unzip
+      - bsdmainutils
+      - python
+      - util-linux
+      - ca-certificates
+      - binutils
+      - bc
+      - jq
+      - tmux
+      - netcat
+      - lib32gcc1
+      - lib32stdc++6
+      - steamcmd
+      - libsdl2-2.0-0:i386
+      - python3-pip
+      - restic
+      - fuse
+
+- name: Install swift and keystone clients
+  pip:
+    executable: pip3
+    name: 
+      - python-keystoneclient
+      - python-swiftclient
+
+- name: Add vhserver group
+  ansible.builtin.group:
+    name: vhserver
+    state: present
+
+- name: "Add and configure vhserver user"
+  ansible.builtin.user:
+    name: "vhserver"
+    group: "vhserver"
+    shell: /bin/bash
+
+- name: Download linuxgsm
+  get_url:
+    url: https://linuxgsm.sh
+    dest: /home/vhserver/linuxgsm.sh
+    mode: '0755'
+    owner: vhserver
+
+- name: Install vhserver cli
+  command: ./linuxgsm.sh vhserver
+  args:
+    chdir: /home/vhserver/
+    creates: /home/vhserver/vhserver
+  become_user: vhserver
+  vars:
+    ansible_ssh_pipelining: true
+
+
+- name: Install vhserver server
+  command: /home/vhserver/vhserver auto-install
+  args:
+    chdir: /home/vhserver/
+    creates: /home/vhserver/serverfiles
+  become_user: vhserver
+  vars:
+    ansible_ssh_pipelining: true
