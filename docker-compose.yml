@@ -1,0 +1,68 @@
+version: "3.8"
+services:
+  db:
+    image: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: app
+      MYSQL_DATABASE: app
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    environment:
+      PMA_ARBITRARY: 1
+      PMA_HOST: db
+    restart: always
+    ports:
+      - 8090:80
+    links:
+      - db
+
+  redis:
+    image: redis:5.0.8
+    restart: on-failure
+    command: >
+      --requirepass redis_password
+
+  mailhog:
+    image: mailhog/mailhog
+    restart: always
+    ports:
+      - ${MAILHOG_PORT_SMTP:-1025}:1025
+      - ${MAILHOG_PORT_HTTP:-8025}:8025
+
+  php:
+    working_dir: /app
+    build:
+      context: .
+      dockerfile: ./docker/php/Dockerfile
+      target: test
+    depends_on:
+      - db
+    command: php bin/console server:run 0.0.0.0:80
+    volumes:
+      - "./front:/app:rw"
+      - "./terraform:/app/terraform:rw"
+      - "./ansible:/app/ansible:rw"
+      - "vendor:/app/vendor/"
+      - "var:/app/var/"
+    ports:
+      - ${PHP_PORT_HTTP:-80}:80
+    links:
+      - db
+      - redis
+
+  assets:
+    working_dir: /app
+    build:
+      context: .
+      dockerfile: ./docker/php/Dockerfile
+      target: dev
+    command: yarn encore dev --watch
+    volumes:
+      - "./front:/app:rw"
+    # ports:
+    #     - ${ENCORE_PORT_HTTP:-8080}:8080
+
+volumes:
+  var:
+  vendor:
