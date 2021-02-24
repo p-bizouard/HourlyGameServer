@@ -1,3 +1,11 @@
+### Build docker image
+
+Build image
+
+```
+docker build -t hgs_php -f ./docker/php/Dockerfile --target dev .
+```
+
 ### Build packer images
 
 ```

@@ -1,8 +1,0 @@
----
-- name: Start vhserver
-  hosts: valheim
-  tasks:
-    - name: Start vhserver server
-      shell: /home/vhserver/vhserver start
-      become_user: vhserver
-      become: yes

@@ -1,37 +1,39 @@
 ---
 - name: Backup vhserver
   hosts: valheim
+  gather_facts: no
   tasks:
-    - name: Init restic repo
-      shell: restic init
-      become: yes
-      environment:
-        OS_AUTH_URL: https://auth.cloud.ovh.net/v3/
-        OS_IDENTITY_API_VERSION: 3
-        OS_TENANT_ID: "{{ lookup('env', 'OS_TENANT_ID') }}"
-        OS_TENANT_NAME: "{{ lookup('env', 'OS_TENANT_NAME') }}"
-        OS_USERNAME: "{{ lookup('env', 'OS_USERNAME') }}"
-        OS_PASSWORD: "{{ lookup('env', 'OS_PASSWORD') }}"
-        OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') | default('Default', True) }}"
-        OS_PROJECT_DOMAIN_NAME: "{{ lookup('env', 'OS_PROJECT_DOMAIN_NAME') | default('Default', True) }}"
-        OS_REGION_NAME: "{{ lookup('env', 'OS_REGION_NAME') | regex_replace('^([A-Z]+)([0-9]+)$', '\\1') }}"
-        RESTIC_PASSWORD: "{{ lookup('env', 'SERVER_ID') | default('t5Wyeh8Wygmh4dmPLS8DKpNuCeBTbn', True) }}"
-        RESTIC_REPOSITORY: swift:backup-valheim:/{{ lookup('env', 'SERVER_ID') | default('server1', True) }}"
-      failed_when: false
-    - name: Backup VHServer home directory
-      shell: "restic backup {{ item }} --exclude .htop"
-      become: yes
-      environment:
-        OS_AUTH_URL: https://auth.cloud.ovh.net/v3/
-        OS_IDENTITY_API_VERSION: 3
-        OS_TENANT_ID: "{{ lookup('env', 'OS_TENANT_ID') }}"
-        OS_TENANT_NAME: "{{ lookup('env', 'OS_TENANT_NAME') }}"
-        OS_USERNAME: "{{ lookup('env', 'OS_USERNAME') }}"
-        OS_PASSWORD: "{{ lookup('env', 'OS_PASSWORD') }}"
-        OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') | default('Default', True) }}"
-        OS_PROJECT_DOMAIN_NAME: "{{ lookup('env', 'OS_PROJECT_DOMAIN_NAME') | default('Default', True) }}"
-        OS_REGION_NAME: "{{ lookup('env', 'OS_REGION_NAME') | regex_replace('^([A-Z]+)([0-9]+)$', '\\1') }}"
-        RESTIC_PASSWORD: "{{ lookup('env', 'SERVER_ID') | default('t5Wyeh8Wygmh4dmPLS8DKpNuCeBTbn', True) }}"
-        RESTIC_REPOSITORY: swift:backup-valheim:/{{ lookup('env', 'SERVER_ID') | default('server1', True) }}"
-      with_items:
-        - /home/vhserver/.config/
+      - name: Init restic repo
+        shell: restic init
+        become: yes
+        environment:
+            OS_AUTH_URL: https://auth.cloud.ovh.net/v3/
+            OS_IDENTITY_API_VERSION: 3
+            OS_TENANT_ID: "{{ lookup('env', 'OS_TENANT_ID') }}"
+            OS_TENANT_NAME: "{{ lookup('env', 'OS_TENANT_NAME') }}"
+            OS_USERNAME: "{{ lookup('env', 'OS_USERNAME') }}"
+            OS_PASSWORD: "{{ lookup('env', 'OS_PASSWORD') }}"
+            OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') | default('Default', True) }}"
+            OS_PROJECT_DOMAIN_NAME: "{{ lookup('env', 'OS_PROJECT_DOMAIN_NAME') | default('Default', True) }}"
+            OS_REGION_NAME: "{{ lookup('env', 'OS_REGION_NAME') | regex_replace('^([A-Z]+)([0-9]+)$', '\\1') }}"
+            RESTIC_PASSWORD: "{{ lookup('env', 'SERVER_ID') | default('t5Wyeh8Wygmh4dmPLS8DKpNuCeBTbn', True) }}"
+            RESTIC_REPOSITORY: swift:backup-valheim:/{{ lookup('env', 'SERVER_ID') | default('server1', True) }}"
+        failed_when: false
+      - name: Backup VHServer home directory
+        shell: "restic backup {{ item }} --exclude .htop"
+        become: yes
+        environment:
+            OS_AUTH_URL: https://auth.cloud.ovh.net/v3/
+            OS_IDENTITY_API_VERSION: 3
+            OS_TENANT_ID: "{{ lookup('env', 'OS_TENANT_ID') }}"
+            OS_TENANT_NAME: "{{ lookup('env', 'OS_TENANT_NAME') }}"
+            OS_USERNAME: "{{ lookup('env', 'OS_USERNAME') }}"
+            OS_PASSWORD: "{{ lookup('env', 'OS_PASSWORD') }}"
+            OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') | default('Default', True) }}"
+            OS_PROJECT_DOMAIN_NAME: "{{ lookup('env', 'OS_PROJECT_DOMAIN_NAME') | default('Default', True) }}"
+            OS_REGION_NAME: "{{ lookup('env', 'OS_REGION_NAME') | regex_replace('^([A-Z]+)([0-9]+)$', '\\1') }}"
+            RESTIC_PASSWORD: "{{ lookup('env', 'SERVER_ID') | default('t5Wyeh8Wygmh4dmPLS8DKpNuCeBTbn', True) }}"
+            RESTIC_REPOSITORY: swift:backup-valheim:/{{ lookup('env', 'SERVER_ID') | default('server1', True) }}"
+        with_items:
+            - /home/vhserver/.config/
+            - /home/vhserver/lgsm/

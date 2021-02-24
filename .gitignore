@@ -157,5 +157,7 @@ tmp
 mitogen-*
 .vault-pass.*
 .openrc*
+id_rsa
+front/.env.k8s
 
 inventories/*/hosts

@@ -33,9 +33,26 @@ RUN curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add - \
     && apt-get autoremove && apt-get autoclean \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
-USER 1000
+# Copy ansible and terraform requirements
+COPY terraform/requirements.txt terraform-requirement.txt
+COPY ansible/requirements.txt ansible-requirement.txt
 
+RUN pip3 install -r terraform-requirement.txt \
+    && pip3 install -r ansible-requirement.txt \
+    && rm terraform-requirement.txt ansible-requirement.txt
+
+RUN mkdir /.ansible && chown 1000:1000 /.ansible
+
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+ARG USER=user
+RUN groupadd -g $GROUP_ID $USER && \
+    useradd -u $USER_ID -s /bin/sh -g $USER --create-home $USER && \
+    mkdir /home/$USER/.ssh && chown $USER:$USER /home/$USER/.ssh
+
+USER $USER
+
+WORKDIR /app
 
 # Test image
 FROM dev AS test
@@ -66,9 +83,6 @@ COPY terraform terraform
 #  Run build with root
 USER root
 
-RUN pip3 install -r terraform/requirements.txt \
-    && pip3 install -r ansible/requirements.txt
-
 # Install application dependencies
 RUN APP_ENV=prod composer install \
     --no-dev \
@@ -81,8 +95,6 @@ RUN yarn install \
     && yarn build \
     && rm -r node_modules
 
-RUN eval $(ssh-agent)
-
 # Prod image
 FROM test AS prod
 
@@ -90,9 +102,10 @@ WORKDIR /app
 
 # Disable xdebug on production
 RUN rm /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
-
+RUN apt update && apt install -y vim
 # php-fpm is run with www-data
 RUN mkdir var && chown -R www-data:www-data var/
+RUN chown www-data:www-data /.ansible
 USER www-data
 
 CMD  ["php-fpm"]

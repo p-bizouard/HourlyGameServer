@@ -1,0 +1,26 @@
+---
+- name: Start vhserver
+  hosts: all
+  gather_facts: no
+  vars:
+      command_list:
+          - start
+          - stop
+          - restart
+  pre_tasks:
+      - assert:
+            fail_msg: "Var command is not defined. Set it with -e command={{ command_list | join('|') }}"
+            that:
+                - command in command_list
+  tasks:
+      - name: Start vhserver server
+        command: "/home/vhserver/vhserver {{ command }}"
+        become_user: vhserver
+        register: vh_command
+        become: yes
+        ignore_errors: yes
+        vars:
+            ansible_ssh_pipelining: true
+      - name: Write stdout to local file
+        local_action: copy content={{ vh_command.stdout }} dest="{{ stdout }}"
+        when: stdout is defined

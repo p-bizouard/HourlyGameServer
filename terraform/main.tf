@@ -17,13 +17,13 @@ terraform {
 }
 
 provider "openstack" {
-  region = "GRA5"
+  region = var.instance_region
   auth_url = "https://auth.cloud.ovh.net/v3"
 }
 
 resource "openstack_compute_instance_v2" "main_instance" {
   name        = var.instance_name
-  region      = "GRA5"
+  region      = var.instance_region
   image_name  = var.instance_image
   flavor_name = var.instance_type
   key_pair    = var.key_pair
@@ -35,4 +35,9 @@ resource "local_file" "gitlab_ansible_inventory" {
     server = openstack_compute_instance_v2.main_instance,
     game = var.game
   })
+}
+
+output "instance_public_ip" {
+  description = "Public IP address"
+  value       = openstack_compute_instance_v2.main_instance.access_ip_v4
 }
