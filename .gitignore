@@ -42,7 +42,7 @@ terraform.rc
 # Virtualenv
 # http://iamzed.com/2009/05/07/a-primer-on-virtualenv/
 .Python
-[Bb]in
+###[Bb]in
 [Ii]nclude
 [Ll]ib
 [Ll]ib64
@@ -159,5 +159,6 @@ mitogen-*
 .openrc*
 id_rsa
 front/.env.k8s
+/.env
 
 inventories/*/hosts

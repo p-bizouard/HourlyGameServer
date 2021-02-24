@@ -98,11 +98,11 @@ RUN yarn install \
 # Prod image
 FROM test AS prod
 
-WORKDIR /app
-
 # Disable xdebug on production
 RUN rm /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+
 RUN apt update && apt install -y vim
+
 # php-fpm is run with www-data
 RUN mkdir var && chown -R www-data:www-data var/
 RUN chown www-data:www-data /.ansible
