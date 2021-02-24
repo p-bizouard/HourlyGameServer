@@ -1,0 +1,94 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Hello ServerController!{% endblock %}
+
+{% block body %}
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+        <div class="col-sm-6">
+            <h1 class="m-0">Starter Page</h1>
+        </div><!-- /.col -->
+        <div class="col-sm-6">
+            <ol class="breadcrumb float-sm-right">
+            <li class="breadcrumb-item"><a href="#">Home</a></li>
+            <li class="breadcrumb-item active">Starter Page</li>
+            </ol>
+        </div><!-- /.col -->
+        </div><!-- /.row -->
+    </div><!-- /.container-fluid -->
+    </div>
+    <!-- /.content-header -->
+
+    <!-- Main content -->
+    <div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card card-primary card-outline">
+                <div class="card-body">
+                    <h5 class="card-title">Server action</h5>
+
+                    <p class="card-text">Current status : {{ server.lastHistory ? server.lastHistory.state : constant('App\\Entity\\Server::STATE_STOPPED')  }}</p>
+
+                    {# Start only if not already started #}
+                    {% if not server.isInStates(constant('App\\Entity\\Server::STARTED_STATES')) %}
+                        <a class="btn btn-app" href="{{ path('server_action', {'id': server.id, 'action': constant('App\\Entity\\Server::ACTION_START')}) }}">
+                            <i class="fas fa-play"></i> Start
+                        </a>
+                    {% endif %}
+                    {% if server.isInStates(constant('App\\Entity\\Server::ACTIONS_TO_PRE_STATE'))
+                        or server.isInStates(constant('App\\Entity\\Server::STARTED_STATES')) %}
+                        <a class="btn btn-app" href="{{ path('server_action', {'id': server.id, 'action': constant('App\\Entity\\Server::ACTION_BACKUP')}) }}">
+                            <i class="fas fa-save"></i> Save
+                        </a>
+                        <a class="btn btn-app" href="{{ path('server_action', {'id': server.id, 'action': constant('App\\Entity\\Server::ACTION_RESTART')}) }}">
+                            <i class="fas fa-redo"></i> Restart
+                        </a>
+                        <a class="btn btn-app" href="{{ path('server_action', {'id': server.id, 'action': constant('App\\Entity\\Server::ACTION_PAUSE')}) }}">
+                            <i class="fas fa-pause"></i> Pause
+                        </a>
+                        <a class="btn btn-app" href="{{ path('server_action', {'id': server.id, 'action': constant('App\\Entity\\Server::ACTION_STOP')}) }}">
+                            <i class="fas fa-stop"></i> Stop
+                        </a>
+                    {% endif %}
+                </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card card-primary card-outline">
+                <div class="card-body">
+                    <h5 class="card-title">Server details</h5>
+
+                    <table class="table table-bordered table-stripped">
+                        <tr>
+                            <th>Status</th>
+                            <td>{{ server.lastHistory ? server.lastHistory.state }}</td>
+                        </tr>
+                        <tr>
+                            <th>Access</th>
+                            <td>{{ server.isInStates(constant('App\\Entity\\Server::STARTED_STATES')) ? server.lastHistory.ip ~ ':' ~server.game.port }}</td>
+                        </tr>
+                        <tr>
+                            <th>Game</th>
+                            <td>{{ server.game.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Instance</th>
+                            <td>{{ server.instance.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Owner</th>
+                            <td>{{ server.owner.nickname }}</td>
+                        </tr>
+                    </table>
+                </div>
+                </div>
+            </div>
+        </div>
+        <!-- /.row -->
+    </div><!-- /.container-fluid -->
+    </div>
+    <!-- /.content -->
+{% endblock %}

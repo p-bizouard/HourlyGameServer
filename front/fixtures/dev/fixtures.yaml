@@ -1,0 +1,66 @@
+App\Entity\User:
+    admin:
+        firstname: admin
+        lastname: admin
+        nickname: admin
+        email: admin@example.com
+        roles: [ROLE_ADMIN]
+        password: \$2y\$13\$Pie4F./WvQMnmm9ncStzhubKWz1RVGbO7OzyO.hj7NYpWud8MgUDq # admin
+    user:
+        firstname: user
+        lastname: user
+        nickname: user
+        email: user@example.com
+        roles: []
+        password: ""
+App\Entity\Game:
+    valheim:
+        name: valheim
+        image: Valheim base server
+        port: 2456
+App\Entity\Instance:
+    b2-7:
+        name: b2-7
+        ram: 7
+        cpu: 2
+    b2-15:
+        name: b2-15
+        ram: 15
+        cpu: 4
+    s1-2:
+        name: s1-2
+        ram: 2
+        cpu: 1
+    s1-4:
+        name: s1-4
+        ram: 4
+        cpu: 1
+    s1-8:
+        name: s1-8
+        ram: 8
+        cpu: 2
+App\Entity\Server:
+    server-1:
+        owner: "@admin"
+        instance: "@b2-7"
+        game: "@valheim"
+        name: "Serveur test 1"
+        lastHistory: "@server-history-1"
+App\Entity\ServerHistory:
+    server-history-1:
+        server: "@server-1"
+        instance: "@b2-7"
+        created: <dateTimeBetween('-2 days', '-1 days')>
+        ended: <dateTimeBetween('-1 days', '0 days')>
+        consumed: 5
+        state: shutdown
+        ip: 1.1.1.1
+App\Entity\ServerUser:
+    server-user-1:
+        user: "@admin"
+        server: "@server-1"
+        role: "owner"
+    server-user-2:
+        user: "@user"
+        server: "@server-1"
+        role: "user"
