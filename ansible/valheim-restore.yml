@@ -1,5 +1,5 @@
 ---
-- name: Backup vhserver
+- name: Restore vhserver
   hosts: valheim
   gather_facts: no
   tasks:

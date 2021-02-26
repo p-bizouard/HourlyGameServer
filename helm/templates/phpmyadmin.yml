@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Service
+metadata:
+    name: phpmyadmin
+    labels:
+        helm.sh/chart: hgs-0.1.0
+        app.kubernetes.io/name: hgs
+        app.kubernetes.io/instance: hgs
+        app.kubernetes.io/version: "latest"
+        app.kubernetes.io/managed-by: Helm
+spec:
+    type: ClusterIP
+    ports:
+        - port: 80
+          targetPort: 80
+          protocol: TCP
+          name: php
+    selector:
+        app: phpmyadmin
+        app.kubernetes.io/name: hgs
+        app.kubernetes.io/instance: hgs
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: phpmyadmin
+    labels:
+        helm.sh/chart: hgs-0.1.0
+        app.kubernetes.io/name: hgs
+        app.kubernetes.io/instance: hgs
+        app.kubernetes.io/version: "latest"
+        app.kubernetes.io/managed-by: Helm
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app.kubernetes.io/name: hgs
+            app.kubernetes.io/instance: hgs
+    template:
+        metadata:
+            labels:
+                app: phpmyadmin
+                app.kubernetes.io/name: hgs
+                app.kubernetes.io/instance: hgs
+        spec:
+            serviceAccountName: hgs
+            securityContext: {}
+            containers:
+                - name: phpmyadmin
+                  image: phpmyadmin
+                  imagePullPolicy: IfNotPresent
+                  env:
+                      - name: PMA_HOST
+                        value: bp19050-001.dbaas.ovh.net
+                      - name: PMA_PORT
+                        value: "35598"

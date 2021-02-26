@@ -5,6 +5,7 @@ RUN apt update
 RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -;
 RUN apt install -y nodejs libcurl4-gnutls-dev zlib1g-dev libicu-dev g++ libxml2-dev libpq-dev libonig-dev libzip-dev libpng-dev \
     software-properties-common \
+    vim \
     && apt-get autoremove && apt-get autoclean \
     && rm -rf /var/lib/apt/lists/*
     
@@ -24,7 +25,7 @@ RUN echo "date.timezone = Europe/Paris" >> /usr/local/etc/php/conf.d/timezone.in
 ADD docker/php/symfony-entry-point.sh /
 ENTRYPOINT  ["/bin/bash", "/symfony-entry-point.sh"]
 
-RUN npm install --global yarn
+RUN npm install --global yarn gamedig
 
 # Install ansible & terraform
 RUN curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add - \
@@ -61,9 +62,10 @@ FROM dev AS test
 COPY front/assets assets
 COPY front/bin bin
 COPY front/config config
-# COPY fixtures fixtures
+COPY front/fixtures fixtures
 COPY front/public public
 COPY front/src src
+COPY front/migrations migrations
 COPY front/templates templates
 COPY front/tests tests
 COPY front/translations translations
@@ -100,8 +102,6 @@ FROM test AS prod
 
 # Disable xdebug on production
 RUN rm /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
-
-RUN apt update && apt install -y vim
 
 # php-fpm is run with www-data
 RUN mkdir var && chown -R www-data:www-data var/

@@ -41,9 +41,9 @@ docker exec -it -w /app hgs_php_1 php bin/console hautelook:fixtures:load --env=
 
 ```
 docker-compose up
-docker cp .openrc "$(docker-compose ps -q php)":/home/user/.openrc
-docker cp id_rsa "$(docker-compose ps -q php)":/home/user/.ssh/id_rsa
-docker-compose exec php chmod 0600 /home/user/.ssh/id_rsa
+docker cp .openrc "$(docker-compose ps -q php)":/mnt/.openrc
+docker cp id_rsa "$(docker-compose ps -q php)":/mnt/id_rsa
+docker-compose exec php chmod 0600 /mnt/id_rsa
 ```
 
 ### Access to your containers

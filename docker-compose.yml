@@ -36,7 +36,6 @@ services:
             context: .
             dockerfile: ./docker/php/Dockerfile
             target: dev
-        user: "${USER:-1000}:${GROUP:-1000}"
         depends_on:
             - db
         command: php bin/console server:run 0.0.0.0:80
@@ -48,21 +47,6 @@ services:
             - "var:/app/var/"
         ports:
             - ${PHP_PORT_HTTP:-80}:80
-        links:
-            - db
-            - redis
-
-    php_prod:
-        working_dir: /app
-        build:
-            context: .
-            dockerfile: ./docker/php/Dockerfile
-            target: prod
-        depends_on:
-            - db
-        command: php bin/console server:run 0.0.0.0:80
-        ports:
-            - ${PHP_PORT_HTTP_PROD:-81}:80
         links:
             - db
             - redis

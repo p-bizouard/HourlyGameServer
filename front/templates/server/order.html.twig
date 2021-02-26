@@ -1,5 +1,7 @@
 {% extends 'base.html.twig' %}
 
+{% form_theme form 'bootstrap_4_layout.html.twig' %}
+
 {% block title %}Hello ServerController!{% endblock %}
 
 {% block body %}
@@ -8,12 +10,11 @@
     <div class="container-fluid">
         <div class="row mb-2">
         <div class="col-sm-6">
-            <h1 class="m-0">Starter Page</h1>
+            <h1 class="m-0">Create a server</h1>
         </div><!-- /.col -->
         <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
-            <li class="breadcrumb-item"><a href="#">Home</a></li>
-            <li class="breadcrumb-item active">Starter Page</li>
+            <li class="breadcrumb-item active">Create a serve</li>
             </ol>
         </div><!-- /.col -->
         </div><!-- /.row -->
@@ -26,32 +27,25 @@
     <div class="container-fluid">
         <div class="row">
         <div class="col-lg-6">
-            <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Card title</h5>
+            <div class="card card-primary card-default">
+                <div class="card-header">
+                  <h3 class="card-title">Create a server</h3>
+                </div>
+                <div class="card-body p-0">
+                    {{ form_start(form) }}
 
-                <p class="card-text">
-                Some quick example text to build on the card title and make up the bulk of the card's
-                content.
-                </p>
+                    <div class="col-lg">{{ form_row(form.game) }}</div>
+                    <div class="col-lg">{{ form_row(form.instance) }}</div>
+                    <div class="col-lg">{{ form_row(form.name) }}</div>
+                    <div class="col-lg">{{ form_row(form.password) }}</div>
+                    <div class="col-lg">{{ form_row(form.submit) }}</div>
 
-                <a href="#" class="card-link">Card link</a>
-                <a href="#" class="card-link">Another link</a>
-            </div>
-            </div>
+                    {{ form_end(form) }}
 
-            <div class="card card-primary card-outline">
-            <div class="card-body">
-                <h5 class="card-title">Card title</h5>
 
-                <p class="card-text">
-                Some quick example text to build on the card title and make up the bulk of the card's
-                content.
-                </p>
-                <a href="#" class="card-link">Card link</a>
-                <a href="#" class="card-link">Another link</a>
-            </div>
-            </div><!-- /.card -->
+                </div>
+                <!-- /.card-body -->
+              </div>
         </div>
         <!-- /.col-md-6 -->
         <div class="col-lg-6">

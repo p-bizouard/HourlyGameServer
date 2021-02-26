@@ -64,7 +64,7 @@
                     <table class="table table-bordered table-stripped">
                         <tr>
                             <th>Status</th>
-                            <td>{{ server.lastHistory ? server.lastHistory.state }}</td>
+                            <td>{{ server.lastHistory ? server.lastHistory.state : constant('App\\Entity\\Server::STATE_STOPPED') }}</td>
                         </tr>
                         <tr>
                             <th>Access</th>

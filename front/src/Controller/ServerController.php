@@ -4,9 +4,13 @@ namespace App\Controller;
 
 use App\Entity\Server;
 use App\Entity\ServerHistory;
+use App\Entity\ServerUser;
+use App\Form\OrderServerType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\BrowserKit\History;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Form\FormFactoryInterface;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
@@ -17,9 +21,39 @@ class ServerController extends AbstractController
     /**
      * @Route("/server/order", name="server_order")
      */
-    public function serverOrder(): Response
+    public function serverOrder(Request $request, FormFactoryInterface $formFactory): Response
     {
-        return $this->render('server/order.html.twig');
+        $newServer = new Server();
+        $form = $this->createForm(OrderServerType::class, $newServer, [
+            
+        ]);
+
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted()) {
+            if ($form->isValid()) {
+                $newServer->setOwner($this->getUser());
+                
+                $serverUser = new ServerUser();
+                $serverUser->setServer($newServer);
+                $serverUser->setUser($newServer->getOwner());
+                $serverUser->setRole(ServerUser::ROLE_OWNER);
+
+                $em = $this->getDoctrine()->getManager();
+                $em->persist($newServer);
+                $em->persist($serverUser);
+                $em->flush();
+
+
+                $this->addFlash('success', 'Server ordered');
+
+                return $this->redirectToRoute('server_details', ['id' => $newServer->getId()]);
+            }
+        }
+
+        return $this->render('server/order.html.twig', [
+            'form' => $form->createView()
+        ]);
     }
     
     /**
@@ -32,7 +66,7 @@ class ServerController extends AbstractController
         // }
         
         
-        $process = Process::fromShellCommandline('cd ../terraform && . ../.openrc && terraform init -backend-config "state_name=$TF_VAR_state_name"', null, [
+        $process = Process::fromShellCommandline('cd ../terraform && . /mnt/.openrc && terraform init -backend-config "state_name=$TF_VAR_state_name"', null, [
             'TF_VAR_game' => $server->getGame()->getName(),
             'TF_VAR_instance_image' => $server->getGame()->getImage(),
             'TF_VAR_instance_type' => $server->getInstance()->getName(),
@@ -63,7 +97,7 @@ class ServerController extends AbstractController
             }
 
             // Apply - boot
-            $process = Process::fromShellCommandline('cd ../terraform && . ../.openrc && terraform apply -auto-approve', null, [
+            $process = Process::fromShellCommandline('cd ../terraform && . /mnt/.openrc && terraform apply -auto-approve', null, [
                 'TF_VAR_game' => $server->getGame()->getName(),
                 'TF_VAR_instance_image' => $server->getGame()->getImage(),
                 'TF_VAR_instance_type' => $server->getInstance()->getName(),
@@ -77,14 +111,14 @@ class ServerController extends AbstractController
             if (!$process->isSuccessful()) {
                 throw new ProcessFailedException($process);
             }
-            $this->addFlash('success', $process->getOutput());
+            // $this->addFlash('success', $process->getOutput());
         
         
 
 
 
             // Get IP
-            $process = Process::fromShellCommandline('cd ../terraform && . ../.openrc && terraform output -json', null, [
+            $process = Process::fromShellCommandline('cd ../terraform && . /mnt/.openrc && terraform output -json', null, [
                 'TF_VAR_game' => $server->getGame()->getName(),
                 'TF_VAR_instance_image' => $server->getGame()->getImage(),
                 'TF_VAR_instance_type' => $server->getInstance()->getName(),
@@ -96,7 +130,7 @@ class ServerController extends AbstractController
             if (!$process->isSuccessful()) {
                 throw new ProcessFailedException($process);
             }
-            $this->addFlash('success', $process->getOutput());
+            // $this->addFlash('success', $process->getOutput());
 
             $jsonOutput = json_decode($process->getOutput(), true);
             $lastHistory = $server->getLastHistory();
@@ -127,12 +161,12 @@ class ServerController extends AbstractController
                 $filesystem = new Filesystem();
                 $tmpPath = $filesystem->tempnam('/tmp', sprintf('ansible_inventory_%s_', $server->getId()), '.yml');
                 $filesystem->dumpFile($tmpPath, sprintf(
-                    "[%s]\n%s ansible_user=ubuntu private_key_file=~/.ssh/id_rsa",
+                    "[%s]\n%s ansible_user=ubuntu ansible_ssh_private_key_file=/mnt/id_rsa\n",
                     $server->getGame()->getName(),
                     $lastHistory->getIp(),
                 ));
             
-                $process = Process::fromShellCommandline(sprintf('. ../.openrc && cd ../ansible && ansible-playbook -i %s valheim-restore.yml', $tmpPath, Server::ACTIONS_TO_COMMAND[$action]), null, [
+                $process = Process::fromShellCommandline(sprintf('. /mnt/.openrc && cd ../ansible && ansible-playbook -i %s valheim-restore.yml', $tmpPath), null, [
                     'SERVER_ID' => $server->getId()
                 ]);
                 $process->run();
@@ -140,7 +174,7 @@ class ServerController extends AbstractController
                 if (!$process->isSuccessful()) {
                     throw new ProcessFailedException($process);
                 }
-                $this->addFlash('success', $process->getOutput());
+                // $this->addFlash('success', $process->getOutput());
             }
         
 
@@ -157,14 +191,14 @@ class ServerController extends AbstractController
             $filesystem = new Filesystem();
             $tmpPath = $filesystem->tempnam('/tmp', sprintf('ansible_inventory_%s_', $server->getId()), '.yml');
             $filesystem->dumpFile($tmpPath, sprintf(
-                "[%s]\n%s ansible_user=ubuntu private_key_file=~/.ssh/id_rsa",
+                "[%s]\n%s ansible_user=ubuntu ansible_ssh_private_key_file=/mnt/id_rsa",
                 $server->getGame()->getName(),
                 $lastHistory->getIp(),
             ));
             
             $commandStdout = $filesystem->tempnam('/tmp', sprintf('ansible_stdout_%s_', $server->getId()));
 
-            $process = Process::fromShellCommandline(sprintf('. ../.openrc && cd ../ansible && ansible-playbook -i %s -e command=%s -e stdout=%s valheim-command.yml', $tmpPath, Server::ACTIONS_TO_COMMAND[$action], $commandStdout), null, [
+            $process = Process::fromShellCommandline(sprintf('. /mnt/.openrc && cd ../ansible && ansible-playbook -i %s -e command=%s -e stdout=%s valheim-command.yml', $tmpPath, Server::ACTIONS_TO_COMMAND[$action], $commandStdout), null, [
 
             ]);
             $process->run();
@@ -172,7 +206,7 @@ class ServerController extends AbstractController
             if (!$process->isSuccessful()) {
                 throw new ProcessFailedException($process);
             }
-            $this->addFlash('success', $process->getOutput());
+            // $this->addFlash('success', $process->getOutput());
             
             $output = file_get_contents($commandStdout);
             if ((preg_match(Server::SERVER_STARTED_REGEX, $output) && in_array($action, [Server::ACTION_START, Server::ACTION_RESTART]))
@@ -193,7 +227,7 @@ class ServerController extends AbstractController
             $this->getDoctrine()->getManager()->flush();
 
             // Apply - boot
-            $process = Process::fromShellCommandline('cd ../terraform && . ../.openrc && terraform destroy -auto-approve', null, [
+            $process = Process::fromShellCommandline('cd ../terraform && . /mnt/.openrc && terraform destroy -auto-approve', null, [
                 'TF_VAR_game' => $server->getGame()->getName(),
                 'TF_VAR_instance_image' => $server->getGame()->getImage(),
                 'TF_VAR_instance_type' => $server->getInstance()->getName(),
@@ -207,7 +241,7 @@ class ServerController extends AbstractController
             if (!$process->isSuccessful()) {
                 throw new ProcessFailedException($process);
             }
-            $this->addFlash('success', $process->getOutput());
+            // $this->addFlash('success', $process->getOutput());
             
             $lastHistory = $server->getLastHistory();
             $lastHistory->setState(Server::STATE_STOPPED);
@@ -227,20 +261,20 @@ class ServerController extends AbstractController
                 $filesystem = new Filesystem();
                 $tmpPath = $filesystem->tempnam('/tmp', sprintf('ansible_inventory_%s_', $server->getId()), '.yml');
                 $filesystem->dumpFile($tmpPath, sprintf(
-                    "[%s]\n%s ansible_user=ubuntu private_key_file=~/.ssh/id_rsa",
+                    "[%s]\n%s ansible_user=ubuntu ansible_ssh_private_key_file=/mnt/id_rsa",
                     $server->getGame()->getName(),
                     $lastHistory->getIp(),
                 ));
         
-                $process = Process::fromShellCommandline(sprintf('. ../.openrc && cd ../ansible && ansible-playbook -i %s valheim-backup.yml', $tmpPath, Server::ACTIONS_TO_COMMAND[$action]), null, [
-                'SERVER_ID' => $server->getId()
-            ]);
+                $process = Process::fromShellCommandline(sprintf('. /mnt/.openrc && cd ../ansible && ansible-playbook -i %s valheim-backup.yml', $tmpPath, Server::ACTIONS_TO_COMMAND[$action]), null, [
+                    'SERVER_ID' => $server->getId()
+                ]);
                 $process->run();
         
                 if (!$process->isSuccessful()) {
                     throw new ProcessFailedException($process);
                 }
-                $this->addFlash('success', $process->getOutput());
+                // $this->addFlash('success', $process->getOutput());
             
             
                 $lastHistory = $server->getLastHistory();

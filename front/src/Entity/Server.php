@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * @ORM\Entity(repositoryClass=ServerRepository::class)
@@ -22,12 +23,13 @@ class Server
     private $id;
 
     /**
+     * @Assert\NotBlank()
      * @ORM\Column(type="string")
      */
     private string $name;
 
     /**
-     * @ORM\Column(type="string")
+     * @ORM\Column(type="string", nullable=true)
      */
     private string $password;
 
@@ -37,11 +39,13 @@ class Server
     private User $owner;
 
     /**
+     * @Assert\NotBlank()
      * @ORM\ManyToOne(targetEntity="App\Entity\Game", inversedBy="servers")
      */
     private Game $game;
 
     /**
+     * @Assert\NotBlank()
      * @ORM\ManyToOne(targetEntity="App\Entity\Instance", inversedBy="servers")
      */
     private Instance $instance;
@@ -88,8 +92,8 @@ class Server
      */
     private ?DateTime $updated;
     
-    const SERVER_STARTED_REGEX = '/(is already running|\[\s+OK\s+\] Starting)/m';
-    const SERVER_STOPPED_REGEX = '/(\[\s+OK\s+\] Stopping|is already stopped)/m';
+    const SERVER_STARTED_REGEX = '/(is already running|\[.*OK.*\] Starting)/m';
+    const SERVER_STOPPED_REGEX = '/(\[.*OK.*\] Stopping|is already stopped)/m';
 
     const STATE_BOOTING = 'booting';
     const STATE_BOOTED = 'booted';

@@ -14,6 +14,9 @@ use Gedmo\Mapping\Annotation as Gedmo;
  */
 class ServerUser
 {
+    const ROLE_OWNER = 'owner';
+    const ROLE_USER = 'user';
+
     /**
      * @ORM\Id
      * @ORM\GeneratedValue
