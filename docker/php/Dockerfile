@@ -42,6 +42,8 @@ RUN pip3 install -r terraform-requirement.txt \
     && pip3 install -r ansible-requirement.txt \
     && rm terraform-requirement.txt ansible-requirement.txt
 
+RUN wget https://get.symfony.com/cli/installer -O - | bash && mv /root/.symfony/bin/symfony /usr/local/bin/symfony
+
 RUN mkdir /.ansible && chown 1000:1000 /.ansible
 
 ARG USER_ID=1000
@@ -52,6 +54,7 @@ RUN groupadd -g $GROUP_ID $USER && \
     mkdir /home/$USER/.ssh && chown $USER:$USER /home/$USER/.ssh
 
 USER $USER
+USER root
 
 WORKDIR /app
 

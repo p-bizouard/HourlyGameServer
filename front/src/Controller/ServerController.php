@@ -3,21 +3,37 @@
 namespace App\Controller;
 
 use App\Entity\Server;
+use App\Entity\User;
 use App\Entity\ServerHistory;
 use App\Entity\ServerUser;
+use App\Form\AddServerUserType;
+use App\Form\EditServerType;
 use App\Form\OrderServerType;
+use App\Form\RemoveServerUserType;
+use App\Service\ServerService;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\BrowserKit\History;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Form\FormFactory;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Routing\Annotation\Route;
 
+use function DeepCopy\deep_copy;
+
 class ServerController extends AbstractController
 {
+    private ServerService $serverService;
+
+    public function __construct(ServerService $serverService)
+    {
+        $this->serverService = $serverService;
+    }
     /**
      * @Route("/server/order", name="server_order")
      */
@@ -61,239 +77,134 @@ class ServerController extends AbstractController
      */
     public function serverAction(Server $server, string $action): Response
     {
+        /** @var User */
+        $user = $this->getUser();
+
+        if (!$user->canAccessServer($server)) {
+            throw new UnauthorizedHttpException('Cannot access this server');
+        }
+        
         // if ($server->getLastState() !== null && $server->getLastState() !== 'shutdown') {
         //     return $this->redirectToRoute('server_details', ['id' => $server->getId()]);
         // }
-        
-        
-        $process = Process::fromShellCommandline('cd ../terraform && . /mnt/.openrc && terraform init -backend-config "state_name=$TF_VAR_state_name"', null, [
-            'TF_VAR_game' => $server->getGame()->getName(),
-            'TF_VAR_instance_image' => $server->getGame()->getImage(),
-            'TF_VAR_instance_type' => $server->getInstance()->getName(),
-            'TF_VAR_instance_name' => sprintf('%s - %s', $server->getId(), $server->getName()),
-            'TF_VAR_key_pair' => 'hgs',
-            'TF_VAR_state_name' => sprintf('%s-%s.tf', $server->getId(), $server->getGame()->getName())
-        ]);
-        $process->setTimeout(3600);
-        $process->run();
-        
-        if (!$process->isSuccessful()) {
-            throw new ProcessFailedException($process);
-        }
+        $this->serverService->initTerraform($server);
 
         if (in_array($action, [Server::ACTION_START, Server::ACTION_RESTART, Server::ACTION_PAUSE])) {
             $needRestore = false;
             if ($server->isInStates(Server::STOPPED_STATES)) {
-                $newHistory = new ServerHistory();
-                $newHistory->setInstance($server->getInstance());
-                $newHistory->setState(Server::STATE_BOOTING);
-                $server->setLastHistory($newHistory);
-                $server->addHistory($newHistory);
-        
-                $this->getDoctrine()->getManager()->persist($server);
-                $this->getDoctrine()->getManager()->flush();
-
                 $needRestore = true;
             }
 
-            // Apply - boot
-            $process = Process::fromShellCommandline('cd ../terraform && . /mnt/.openrc && terraform apply -auto-approve', null, [
-                'TF_VAR_game' => $server->getGame()->getName(),
-                'TF_VAR_instance_image' => $server->getGame()->getImage(),
-                'TF_VAR_instance_type' => $server->getInstance()->getName(),
-                'TF_VAR_instance_name' => sprintf('%s - %s', $server->getId(), $server->getName()),
-                'TF_VAR_key_pair' => 'hgs',
-                'TF_VAR_state_name' => sprintf('%s-%s.tf', $server->getId(), $server->getGame()->getName())
-            ]);
-            $process->setTimeout(3600);
-            $process->run();
-        
-            if (!$process->isSuccessful()) {
-                throw new ProcessFailedException($process);
-            }
-            // $this->addFlash('success', $process->getOutput());
-        
-        
-
-
-
-            // Get IP
-            $process = Process::fromShellCommandline('cd ../terraform && . /mnt/.openrc && terraform output -json', null, [
-                'TF_VAR_game' => $server->getGame()->getName(),
-                'TF_VAR_instance_image' => $server->getGame()->getImage(),
-                'TF_VAR_instance_type' => $server->getInstance()->getName(),
-                'TF_VAR_instance_name' => sprintf('%s - %s', $server->getId(), $server->getName()),
-                'TF_VAR_key_pair' => 'hgs',
-                'TF_VAR_state_name' => sprintf('%s-%s.tf', $server->getId(), $server->getGame()->getName())
-            ]);
-            $process->run();
-            if (!$process->isSuccessful()) {
-                throw new ProcessFailedException($process);
-            }
-            // $this->addFlash('success', $process->getOutput());
-
-            $jsonOutput = json_decode($process->getOutput(), true);
-            $lastHistory = $server->getLastHistory();
-            if ($lastHistory->getStarted() === null) {
-                $lastHistory->setStarted(new \DateTime());
-            }
-            $lastHistory->setIp($jsonOutput['instance_public_ip']['value']);
-            
-            if ($server->isInStates([Server::STATE_BOOTING])) {
-                $lastHistory->setState(Server::STATE_BOOTED);
-            }
-            
-            $this->getDoctrine()->getManager()->persist($lastHistory);
-            $this->getDoctrine()->getManager()->flush();
-            
-        
-
-
-            
-
+            $this->serverService->bootServer($server);
 
             if (true || ($needRestore && $server->getLastBackup() !== null)) {
-                $lastHistory = $server->getLastHistory();
-                $lastHistory->setState(Server::STATE_RESTORING);
-            
-                $this->getDoctrine()->getManager()->persist($lastHistory);
-                $this->getDoctrine()->getManager()->flush();
-                $filesystem = new Filesystem();
-                $tmpPath = $filesystem->tempnam('/tmp', sprintf('ansible_inventory_%s_', $server->getId()), '.yml');
-                $filesystem->dumpFile($tmpPath, sprintf(
-                    "[%s]\n%s ansible_user=ubuntu ansible_ssh_private_key_file=/mnt/id_rsa\n",
-                    $server->getGame()->getName(),
-                    $lastHistory->getIp(),
-                ));
-            
-                $process = Process::fromShellCommandline(sprintf('. /mnt/.openrc && cd ../ansible && ansible-playbook -i %s valheim-restore.yml', $tmpPath), null, [
-                    'SERVER_ID' => $server->getId()
-                ]);
-                $process->run();
-            
-                if (!$process->isSuccessful()) {
-                    throw new ProcessFailedException($process);
-                }
-                // $this->addFlash('success', $process->getOutput());
+                $this->serverService->restoreBackup($server);
             }
         
-
-
-
-
-
-            // start server
-            $lastHistory = $server->getLastHistory();
-            $lastHistory->setState(Server::ACTIONS_TO_PRE_STATE[$action]);
-            
-            $this->getDoctrine()->getManager()->persist($lastHistory);
-            $this->getDoctrine()->getManager()->flush();
-            $filesystem = new Filesystem();
-            $tmpPath = $filesystem->tempnam('/tmp', sprintf('ansible_inventory_%s_', $server->getId()), '.yml');
-            $filesystem->dumpFile($tmpPath, sprintf(
-                "[%s]\n%s ansible_user=ubuntu ansible_ssh_private_key_file=/mnt/id_rsa",
-                $server->getGame()->getName(),
-                $lastHistory->getIp(),
-            ));
-            
-            $commandStdout = $filesystem->tempnam('/tmp', sprintf('ansible_stdout_%s_', $server->getId()));
-
-            $process = Process::fromShellCommandline(sprintf('. /mnt/.openrc && cd ../ansible && ansible-playbook -i %s -e command=%s -e stdout=%s valheim-command.yml', $tmpPath, Server::ACTIONS_TO_COMMAND[$action], $commandStdout), null, [
-
-            ]);
-            $process->run();
-            
-            if (!$process->isSuccessful()) {
-                throw new ProcessFailedException($process);
+            try {
+                $this->serverService->startPauseRestartServer($server, $action);
+            } catch (Exception $e) {
+                $this->addFlash('danger', $e->getMessage());
             }
-            // $this->addFlash('success', $process->getOutput());
-            
-            $output = file_get_contents($commandStdout);
-            if ((preg_match(Server::SERVER_STARTED_REGEX, $output) && in_array($action, [Server::ACTION_START, Server::ACTION_RESTART]))
-                || (preg_match(Server::SERVER_STOPPED_REGEX, $output) && in_array($action, [Server::ACTION_PAUSE]))) {
-                $lastHistory->setState(Server::ACTIONS_TO_STATE[$action]);
-                $this->addFlash('success', $output);
-            } else {
-                $lastHistory->setState(Server::STATE_STOPPED);
-                $this->addFlash('danger', $output);
-            }
-
-            $this->getDoctrine()->getManager()->persist($lastHistory);
-            $this->getDoctrine()->getManager()->flush();
         } elseif (in_array($action, [Server::ACTION_STOP])) {
-            $lastHistory = $server->getLastHistory();
-            $lastHistory->setState(Server::STATE_STOPPING);
-            $this->getDoctrine()->getManager()->persist($lastHistory);
-            $this->getDoctrine()->getManager()->flush();
-
-            // Apply - boot
-            $process = Process::fromShellCommandline('cd ../terraform && . /mnt/.openrc && terraform destroy -auto-approve', null, [
-                'TF_VAR_game' => $server->getGame()->getName(),
-                'TF_VAR_instance_image' => $server->getGame()->getImage(),
-                'TF_VAR_instance_type' => $server->getInstance()->getName(),
-                'TF_VAR_instance_name' => sprintf('%s - %s', $server->getId(), $server->getName()),
-                'TF_VAR_key_pair' => 'hgs',
-                'TF_VAR_state_name' => sprintf('%s-%s.tf', $server->getId(), $server->getGame()->getName())
-            ]);
-            $process->setTimeout(3600);
-            $process->run();
-        
-            if (!$process->isSuccessful()) {
-                throw new ProcessFailedException($process);
-            }
-            // $this->addFlash('success', $process->getOutput());
-            
-            $lastHistory = $server->getLastHistory();
-            $lastHistory->setState(Server::STATE_STOPPED);
-            $lastHistory->setStopped(new \DateTime());
-            $this->getDoctrine()->getManager()->persist($lastHistory);
-            $this->getDoctrine()->getManager()->flush();
+            $this->serverService->stopServer($server);
         } elseif (in_array($action, [Server::ACTION_BACKUP])) {
-            $lastHistory = $server->getLastHistory();
-
-            if ($lastHistory->getState() !== Server::STATE_PAUSED) {
-                $this->addFlash('danger', sprintf('Actually %s, must be %s', $lastHistory->getState(), Server::STATE_PAUSED));
-            } else {
-                $lastHistory->setState(Server::ACTIONS_TO_PRE_STATE[$action]);
-        
-                $this->getDoctrine()->getManager()->persist($lastHistory);
-                $this->getDoctrine()->getManager()->flush();
-                $filesystem = new Filesystem();
-                $tmpPath = $filesystem->tempnam('/tmp', sprintf('ansible_inventory_%s_', $server->getId()), '.yml');
-                $filesystem->dumpFile($tmpPath, sprintf(
-                    "[%s]\n%s ansible_user=ubuntu ansible_ssh_private_key_file=/mnt/id_rsa",
-                    $server->getGame()->getName(),
-                    $lastHistory->getIp(),
-                ));
-        
-                $process = Process::fromShellCommandline(sprintf('. /mnt/.openrc && cd ../ansible && ansible-playbook -i %s valheim-backup.yml', $tmpPath, Server::ACTIONS_TO_COMMAND[$action]), null, [
-                    'SERVER_ID' => $server->getId()
-                ]);
-                $process->run();
-        
-                if (!$process->isSuccessful()) {
-                    throw new ProcessFailedException($process);
-                }
-                // $this->addFlash('success', $process->getOutput());
-            
-            
-                $lastHistory = $server->getLastHistory();
-                $lastHistory->setState(Server::STATE_PAUSED);
-                $this->getDoctrine()->getManager()->persist($lastHistory);
-                $this->getDoctrine()->getManager()->flush();
+            try {
+                $this->serverService->backupServer($server);
+            } catch (Exception $e) {
+                $this->addFlash('danger', $e->getMessage());
             }
         }
 
-        return $this->redirectToRoute('server_details', ['id' => $server->getId()]);
+        return $this->redirectToRoute('server_details', [
+            'id' => $server->getId()
+        ]);
     }
     
     /**
      * @Route("/server/{id}", name="server_details")
      */
-    public function serverDetails(Server $server): Response
+    public function serverDetails(Server $server, Request $request, FormFactoryInterface $formFactory): Response
     {
+        /** @var User */
+        $user = $this->getUser();
+
+        if (!$user->canAccessServer($server)) {
+            throw new UnauthorizedHttpException('Cannot access this server');
+        }
+
+        $serverUser = new ServerUser();
+        $formAddServerUser = $this->createForm(AddServerUserType::class, $serverUser, [
+            'server'=> $server
+        ]);
+        
+        $formAddServerUser->handleRequest($request);
+
+        if ($formAddServerUser->isSubmitted()) {
+            if ($formAddServerUser->isValid()) {
+                $serverUser->setServer($server);
+                $serverUser->setRole(ServerUser::ROLE_USER);
+                
+                $em = $this->getDoctrine()->getManager();
+                $em->persist($serverUser);
+                $em->flush();
+
+
+                $this->addFlash('success', 'User authorized');
+
+                return $this->redirectToRoute('server_details', ['id' => $server->getId()]);
+            }
+        }
+
+        if ($user->isOwnerOfServer($server)) {
+            $formRemoveServerUser = $formFactory->createNamedBuilder('remove_server_user', RemoveServerUserType::class, null, [
+                'server' => $server,
+            ])->getForm();
+
+            $formRemoveServerUser->handleRequest($request);
+            if ($formRemoveServerUser->isSubmitted()) {
+                if ($formRemoveServerUser->isValid()) {
+                    $serverUser = $formRemoveServerUser->get('serverUser')->getData();
+                    
+                    $em = $this->getDoctrine()->getManager();
+                    $em->remove($serverUser);
+                    $em->flush();
+
+
+                    $this->addFlash('success', 'User removed');
+
+                    return $this->redirectToRoute('server_details', ['id' => $server->getId()]);
+                }
+            }
+            
+            $formEditServer = $this->createForm(EditServerType::class, $server, [
+                'server' => $server,
+            ]);
+
+            $formEditServer->handleRequest($request);
+            if ($formEditServer->isSubmitted()) {
+                if ($formEditServer->isValid()) {
+                    $em = $this->getDoctrine()->getManager();
+                    $em->persist($server);
+                    $em->flush();
+
+
+                    $this->addFlash('success', 'Server updated');
+
+                    return $this->redirectToRoute('server_details', ['id' => $server->getId()]);
+                }
+            }
+        }
+
+        $players = $this->serverService->getPlayers($server);
+        
         return $this->render('server/details.html.twig', [
-            'server' => $server
+            'server' => $server,
+            'players' => $players,
+            'formAddServerUser' => $formAddServerUser->createView(),
+            'formRemoveServerUser' => isset($formRemoveServerUser) ? $formRemoveServerUser ->createView() : null,
+            'formEditServer' => isset($formEditServer) ? $formEditServer ->createView() : null,
+            
         ]);
     }
 }

@@ -22,15 +22,7 @@ class AppExtension extends AbstractExtension
     public function getFunctions()
     {
         return [
-            new TwigFunction('getUserServers', [$this, 'getUserServers'])
+            // new TwigFunction('getUserServers', [$this, 'getUserServers'])
         ];
-    }
-
-    public function getUserServers()
-    {
-        /** @var User */
-        $user = $this->security->getUser();
-
-        return $user->getServerUsers();
     }
 }

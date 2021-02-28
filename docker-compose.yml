@@ -13,7 +13,7 @@ services:
             PMA_HOST: db
         restart: always
         ports:
-            - 8090:80
+            - 9080:80
         links:
             - db
 
@@ -38,12 +38,12 @@ services:
             target: dev
         depends_on:
             - db
-        command: php bin/console server:run 0.0.0.0:80
+        command: symfony server:start --port=80
         volumes:
             - "./front:/app:rw"
             - "./terraform:/app/terraform:rw"
             - "./ansible:/app/ansible:rw"
-            - "vendor:/app/vendor/"
+            #            - "vendor:/app/vendor/"
             - "var:/app/var/"
         ports:
             - ${PHP_PORT_HTTP:-80}:80
@@ -60,9 +60,6 @@ services:
         command: yarn watch
         volumes:
             - "./front:/app:rw"
-        # ports:
-        #     - ${ENCORE_PORT_HTTP:-8080}:8080
-
 volumes:
     var:
     vendor:

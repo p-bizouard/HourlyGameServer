@@ -4,7 +4,11 @@ namespace App\Repository;
 
 use App\Entity\Server;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\ORMException;
 use Doctrine\Persistence\ManagerRegistry;
+use InvalidArgumentException;
+use RuntimeException;
 
 /**
  * @method Server|null find($id, $lockMode = null, $lockVersion = null)
@@ -47,4 +51,20 @@ class ServerRepository extends ServiceEntityRepository
         ;
     }
     */
+
+    /**
+     * Return all started servers
+     *
+     * @return Server[]
+     */
+    public function findAllStarted(): array
+    {
+        return $this->createQueryBuilder('s')
+            ->join('s.lastHistory', 'lh')
+            ->where('lh.state = :state')
+            ->setParameter('state', Server::STATE_PAUSING)
+            ->getQuery()
+            ->getResult()
+        ;
+    }
 }

@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * @ORM\Entity(repositoryClass=GameRepository::class)
@@ -37,6 +38,11 @@ class Game
     private int $port;
 
     /**
+     * @ORM\Column(type="integer")
+     */
+    private int $queryport;
+
+    /**
      * @var Collection<Server>
      * @ORM\OneToMany(targetEntity="App\Entity\Server", mappedBy="game")
      */
@@ -54,6 +60,21 @@ class Game
      */
     private ?DateTime $updated;
 
+    public function getPasswordConstraints(): array
+    {
+        switch ($this->name) {
+            case 'valheim':
+                return [
+                    new Assert\NotBlank(),
+                    new Assert\Length([
+                        'min' => 5,
+                    ])
+                    
+                ];
+            default:
+                return [];
+            }
+    }
     public function __construct()
     {
         $this->servers = new ArrayCollection();
@@ -155,6 +176,18 @@ class Game
                 $server->setGame(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getQueryport(): ?int
+    {
+        return $this->queryport;
+    }
+
+    public function setQueryport(int $queryport): self
+    {
+        $this->queryport = $queryport;
 
         return $this;
     }

@@ -7,28 +7,12 @@
         <div class="card-body">
           <div class="card-header mb-3">Registration Form</div>
           {{ form_start(form) }}
-          <div class="form_group">
-            <div class="col-md-12 mb-3">
-              {{ form_row(form.nickname, {'attr': {'class': 'form-control'}}) }}
-            </div>
-          </div>
-          <div class="form_group">
-            <div class="col-md-12 mb-3">
-              {{ form_row(form.email, {'attr': {'class': 'form-control'}}) }}
-            </div>
-          </div>
-          <div class="form_group">
-            <div class="col-md-12 mb-3">
-              {{ form_row(form.password.first, {'attr': {'class':
-              'form-control'}}) }}
-            </div>
-          </div>
-          <div class="form_group">
-            <div class="col-md-12 mb-3">
-              {{ form_row(form.password.second, {'attr': {'class':
-              'form-control'}}) }}
-            </div>
-          </div>
+          
+              {{ form_row(form.nickname) }}
+              {{ form_row(form.email) }}
+              {{ form_row(form.password.first) }}
+              {{ form_row(form.password.second) }}
+              
           <div class="form-group">
             <div class="col-md-8 col-md-offset-4" style="margin-top:5px;">
               <button type="submit" class="btn btn-primary">

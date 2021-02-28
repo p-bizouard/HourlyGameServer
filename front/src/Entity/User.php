@@ -58,6 +58,12 @@ class User implements UserInterface
     private $serverUsers;
 
     /**
+     * @var Collection<Server>
+     * @ORM\OneToMany(targetEntity="App\Entity\Server", mappedBy="owner")
+     */
+    private $ownedServers;
+
+    /**
      * @Gedmo\Timestampable(on="create")
      * @ORM\Column(type="datetime")
      */
@@ -72,6 +78,36 @@ class User implements UserInterface
     public function __construct()
     {
         $this->serverUsers = new ArrayCollection();
+        $this->ownedServers = new ArrayCollection();
+    }
+
+    public function __toString()
+    {
+        return sprintf('%s#%s', $this->id, $this->nickname);
+    }
+
+    public function canAccessServer(Server $server): bool
+    {
+        if (in_array('ROLE_ADMIN', $this->getRoles())) {
+            return true;
+        }
+        return $this->isMemberOfServer($server);
+    }
+
+    public function isMemberOfServer(Server $server)
+    {
+        return $this->getServerUsers()->filter(function (ServerUser $serverUser) use ($server) {
+            return $server->getId() === $serverUser->getServer()->getId();
+        })->count() > 0;
+    }
+
+    public function isOwnerOfServer(Server $server)
+    {
+        if (in_array('ROLE_ADMIN', $this->getRoles())) {
+            return true;
+        }
+
+        return $this->getOwnedServers()->contains($server);
     }
 
     public function getId(): ?int
@@ -227,6 +263,36 @@ class User implements UserInterface
             // set the owning side to null (unless already changed)
             if ($serverUser->getUser() === $this) {
                 $serverUser->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|Server[]
+     */
+    public function getOwnedServers(): Collection
+    {
+        return $this->ownedServers;
+    }
+
+    public function addOwnedServer(Server $ownedServer): self
+    {
+        if (!$this->ownedServers->contains($ownedServer)) {
+            $this->ownedServers[] = $ownedServer;
+            $ownedServer->setOwner($this);
+        }
+
+        return $this;
+    }
+
+    public function removeOwnedServer(Server $ownedServer): self
+    {
+        if ($this->ownedServers->removeElement($ownedServer)) {
+            // set the owning side to null (unless already changed)
+            if ($ownedServer->getOwner() === $this) {
+                $ownedServer->setOwner(null);
             }
         }
 

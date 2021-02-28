@@ -81,6 +81,18 @@ class Server
     private ?ServerBackup $lastBackup = null;
 
     /**
+     * @var Collection<ServerCheck>
+     * @ORM\OneToMany(targetEntity="App\Entity\ServerCheck", mappedBy="server")
+     */
+    private $checks;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\ServerCheck",cascade={"persist"})
+     * @ORM\JoinColumn(nullable=true)
+     */
+    private ?ServerCheck $lastCheck = null;
+
+    /**
      * @Gedmo\Timestampable(on="create")
      * @ORM\Column(type="datetime")
      */
@@ -112,7 +124,7 @@ class Server
     const STATE_STOPPED = 'stopped';
 
     const STATE_BACKUPING = 'backuping';
-
+    const STATE_ERROR = 'error';
     
     const ACTION_START = 'start';
     const ACTION_RESTART = 'restart';
@@ -193,19 +205,48 @@ class Server
         self::ACTION_PAUSE => 'stop'
     ];
 
+    const STATES_DANGER = [
+        self::STATE_STOPPED,
+        self::STATE_STOPPING,
+        self::STATE_ERROR
+    ];
+    const STATES_SUCCESS = [
+        self::STATE_STARTED
+    ];
+
     public function __construct()
     {
         $this->serverUsers = new ArrayCollection();
         $this->backups = new ArrayCollection();
         $this->history = new ArrayCollection();
+        $this->checks = new ArrayCollection();
     }
 
+    public function getStatusBootstrapColor(): string
+    {
+        if (in_array($this->getLastState(), self::STATES_SUCCESS)) {
+            return 'success';
+        } elseif (in_array($this->getLastState(), self::STATES_DANGER)) {
+            return 'danger';
+        } else {
+            return 'warning';
+        }
+    }
     public function getLastState(): ?string
     {
         if (!$this->getLastHistory()) {
-            return  null;
+            return  self::STATE_STOPPED;
         }
         return $this->getLastHistory()->getState();
+    }
+
+    public function getStartedSince(): int
+    {
+        if ($this->getLastHistory() === null) {
+            return null;
+        }
+
+        return (new Datetime())->format('u') - $this->getLastHistory()->getStarted()->format('u');
     }
 
     public function isInStates(array $states): bool
@@ -417,6 +458,48 @@ class Server
     public function setPassword(string $password): self
     {
         $this->password = $password;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|ServerCheck[]
+     */
+    public function getChecks(): Collection
+    {
+        return $this->checks;
+    }
+
+    public function addCheck(ServerCheck $check): self
+    {
+        if (!$this->checks->contains($check)) {
+            $this->checks[] = $check;
+            $check->setServer($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCheck(ServerCheck $check): self
+    {
+        if ($this->checks->removeElement($check)) {
+            // set the owning side to null (unless already changed)
+            if ($check->getServer() === $this) {
+                $check->setServer(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getLastCheck(): ?ServerCheck
+    {
+        return $this->lastCheck;
+    }
+
+    public function setLastCheck(?ServerCheck $lastCheck): self
+    {
+        $this->lastCheck = $lastCheck;
 
         return $this;
     }

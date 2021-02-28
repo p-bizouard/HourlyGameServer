@@ -1,16 +1,16 @@
 {
   "devDependencies": {
+    "@fortawesome/fontawesome-free": "^5.15.2",
     "@symfony/stimulus-bridge": "^2.0.0",
     "@symfony/webpack-encore": "^1.0.0",
+    "admin-lte": "^3.1.0-rc",
     "bootstrap": "^4.6.0",
     "core-js": "^3.0.0",
     "jquery": "^3.5.1",
     "popper.js": "^1.16.1",
     "regenerator-runtime": "^0.13.2",
     "stimulus": "^2.0.0",
-    "webpack-notifier": "^1.6.0",
-    "@fortawesome/fontawesome-free": "^5.15.2",
-    "admin-lte": "^3.1.0-rc"
+    "webpack-notifier": "^1.6.0"
   },
   "license": "UNLICENSED",
   "private": true,
@@ -20,5 +20,7 @@
     "watch": "encore dev --watch",
     "build": "encore production --progress"
   },
-  "dependencies": {}
+  "dependencies": {
+    "moment": "^2.29.1"
+  }
 }

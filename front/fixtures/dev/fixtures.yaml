@@ -18,6 +18,7 @@ App\Entity\Game:
         name: valheim
         image: Valheim base server
         port: 2456
+        queryport: 2457
 App\Entity\Instance:
     b2-7:
         name: b2-7
@@ -51,7 +52,7 @@ App\Entity\ServerHistory:
         server: "@server-1"
         instance: "@b2-7"
         created: <dateTimeBetween('-2 days', '-1 days')>
-        ended: <dateTimeBetween('-1 days', '0 days')>
+        stopped: <dateTimeBetween('-1 days', '0 days')>
         consumed: 5
         state: shutdown
         ip: 1.1.1.1

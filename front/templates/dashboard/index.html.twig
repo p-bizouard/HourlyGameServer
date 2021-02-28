@@ -3,18 +3,98 @@
 {% block title %}Hello DashboardController!{% endblock %}
 
 {% block body %}
-<style>
-    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
-    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
-</style>
-
-<div class="example-wrapper">
-    <h1>Hello {{ controller_name }}! ✅</h1>
-
-    This friendly message is coming from:
-    <ul>
-        <li>Your controller at <code><a href="{{ '/app/src/Controller/DashboardController.php'|file_link(0) }}">src/Controller/DashboardController.php</a></code></li>
-        <li>Your template at <code><a href="{{ '/app/templates/dashboard/index.html.twig'|file_link(0) }}">templates/dashboard/index.html.twig</a></code></li>
-    </ul>
+<!-- Content Header (Page header) -->
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+        <div class="col-sm-6">
+            <h1 class="m-0">Dashboard</h1>
+        </div><!-- /.col -->
+        </div><!-- /.row -->
+    </div><!-- /.container-fluid -->
 </div>
+<!-- /.content-header -->
+
+<!-- Main content -->
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card card-primary card-outline">
+                    <div class="card-header">
+                        <h3 class="card-title">Servers list</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Server</th>
+                                        <th>Game</th>
+                                        <th>Status</th>
+                                        <th>Started since</th>
+                                        <th>Co-managers</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for serverUser in app.user.serverUsers %}
+                                        <tr>
+                                            <td><a href="{{ path('server_details', {id: serverUser.server.id }) }}">{{ serverUser.server.name }}</a></td>
+                                            <td>{{ serverUser.server.game.name }}</td>
+                                            <td><span class="badge badge-{{ serverUser.server.getStatusBootstrapColor }}">{{ serverUser.server.getLastState() }}</span></td>
+                                            <td data-moment-fromnow="{{ serverUser.server.lastHistory.started | date('c') }}"></td>
+                                            <td>
+                                                <ul class="list list-unstyled">
+                                                    {% for serverCoManager in serverUser.server.serverUsers %}
+                                                        <li>{{ serverCoManager.user }}</li>
+                                                    {% endfor %}
+                                                </ul>                                                    
+                                            </td>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card card-primary card-outline">
+                    <div class="card-header">
+                        <h3 class="card-title">Features roadmap</h3>
+                    </div>
+                    <div class="card-body">
+                        <ul class="todo-list ui-sortable" data-widget="todo-list">
+                            <li>
+                                <div class="icheck-primary d-inline ml-2"><input type="checkbox"></div>
+                                <span class="text">Playbook ansible pour gérer le mot de passe et le nom du serveur</span>
+                                <small class="badge badge-danger">P1</small>
+                            </li>
+                            <li>
+                                <div class="icheck-primary d-inline ml-2"><input type="checkbox"></div>
+                                <span class="text">Récupérer la liste des joueurs connectés</span>
+                                <small class="badge badge-danger">P1</small>
+                            </li>
+                            <li>
+                                <div class="icheck-primary d-inline ml-2"><input type="checkbox"></div>
+                                <span class="text">Couper le serveur au bout de 30 minutes d'inactivité</span>
+                                <small class="badge badge-warning">P2</small>
+                            </li>
+                            <li>
+                                <div class="icheck-primary d-inline ml-2"><input type="checkbox"></div>
+                                <span class="text">Calcul de la facturation</span>
+                                <small class="badge badge-warning">P2</small>
+                            </li>
+                            <li>
+                                <div class="icheck-primary d-inline ml-2"><input type="checkbox"></div>
+                                <span class="text">Changer de type d'instance devrait cloturer l'historique en cours et en ouvrir un nouveau</span>
+                                <small class="badge badge-info">P3</small>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

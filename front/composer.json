@@ -11,6 +11,7 @@
         "doctrine/doctrine-migrations-bundle": "^3.0",
         "doctrine/orm": "^2.8",
         "gedmo/doctrine-extensions": "^3.0",
+        "myclabs/deep-copy": "^1.10",
         "php-http/guzzle6-adapter": "^2.0",
         "php-http/httplug-bundle": "^1.20",
         "phpdocumentor/reflection-docblock": "^5.2",
@@ -54,8 +55,7 @@
         "symfony/phpunit-bridge": "^5.2",
         "symfony/stopwatch": "^4.4",
         "symfony/var-dumper": "^4.4",
-        "symfony/web-profiler-bundle": "^4.4",
-        "symfony/web-server-bundle": "4.4.*"
+        "symfony/web-profiler-bundle": "^4.4"
     },
     "config": {
         "preferred-install": {

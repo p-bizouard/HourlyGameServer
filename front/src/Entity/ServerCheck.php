@@ -2,40 +2,35 @@
 
 namespace App\Entity;
 
-use App\Repository\ServerUserRepository;
+use App\Repository\ServerCheckRepository;
 use DateTime;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
 
 /**
- * @ORM\Entity(repositoryClass=ServerUserRepository::class)
+ * @ORM\Entity(repositoryClass=ServerCheckRepository::class)
  */
-class ServerUser
+class ServerCheck
 {
-    const ROLE_OWNER = 'owner';
-    const ROLE_USER = 'user';
-
     /**
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
      */
-    private $id;
-
+    private int $id;
+    
     /**
-     * @ORM\Column(type="string")
+     * @ORM\Column(type="integer")
      */
-    private string $role;
-
+    private int $players;
+    
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\User", inversedBy="serverUsers")
+     * @ORM\Column(type="integer")
      */
-    private User $user;
+    private bool $ping;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Server", inversedBy="serverUsers")
+     * @ORM\ManyToOne(targetEntity="App\Entity\Server", inversedBy="checks")
      */
     private Server $server;
 
@@ -51,26 +46,9 @@ class ServerUser
      */
     private ?DateTime $updated;
 
-    public function __toString(): string
-    {
-        return $this->id;
-    }
-
     public function getId(): ?int
     {
         return $this->id;
-    }
-
-    public function getRole(): ?string
-    {
-        return $this->role;
-    }
-
-    public function setRole(string $role): self
-    {
-        $this->role = $role;
-
-        return $this;
     }
 
     public function getCreated(): ?\DateTimeInterface
@@ -97,18 +75,6 @@ class ServerUser
         return $this;
     }
 
-    public function getUser(): ?User
-    {
-        return $this->user;
-    }
-
-    public function setUser(?User $user): self
-    {
-        $this->user = $user;
-
-        return $this;
-    }
-
     public function getServer(): ?Server
     {
         return $this->server;
@@ -117,6 +83,30 @@ class ServerUser
     public function setServer(?Server $server): self
     {
         $this->server = $server;
+
+        return $this;
+    }
+
+    public function getPlayers(): ?int
+    {
+        return $this->players;
+    }
+
+    public function setPlayers(int $players): self
+    {
+        $this->players = $players;
+
+        return $this;
+    }
+
+    public function getPing(): ?int
+    {
+        return $this->ping;
+    }
+
+    public function setPing(int $ping): self
+    {
+        $this->ping = $ping;
 
         return $this;
     }

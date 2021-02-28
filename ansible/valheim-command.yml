@@ -13,7 +13,7 @@
             that:
                 - command in command_list
   tasks:
-      - name: Start vhserver server
+      - name: "{{ command }} vhserver server"
         command: "/home/vhserver/vhserver {{ command }}"
         become_user: vhserver
         register: vh_command
