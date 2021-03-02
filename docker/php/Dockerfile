@@ -3,9 +3,9 @@ FROM php:7.4-fpm AS dev
 
 RUN apt update
 RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -;
-RUN apt install -y nodejs libcurl4-gnutls-dev zlib1g-dev libicu-dev g++ libxml2-dev libpq-dev libonig-dev libzip-dev libpng-dev \
+RUN apt install -y libcurl4-gnutls-dev zlib1g-dev libicu-dev g++ libxml2-dev libpq-dev libonig-dev libzip-dev libpng-dev \
     software-properties-common \
-    vim \
+    vim nodejs git unzip procps \
     && apt-get autoremove && apt-get autoclean \
     && rm -rf /var/lib/apt/lists/*
     
@@ -15,15 +15,9 @@ RUN docker-php-ext-enable redis
 RUN docker-php-ext-enable xdebug
 RUN echo 'memory_limit = 512M' >> /usr/local/etc/php/conf.d/docker-php-memlimit.ini;
 
-RUN apt-get autoremove && apt-get autoclean \
- && rm -rf /var/lib/apt/lists/*
-
 RUN php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/local/bin --filename=composer
 
 RUN echo "date.timezone = Europe/Paris" >> /usr/local/etc/php/conf.d/timezone.ini
-
-ADD docker/php/symfony-entry-point.sh /
-ENTRYPOINT  ["/bin/bash", "/symfony-entry-point.sh"]
 
 RUN npm install --global yarn gamedig
 
@@ -44,51 +38,34 @@ RUN pip3 install -r terraform-requirement.txt \
 
 RUN wget https://get.symfony.com/cli/installer -O - | bash && mv /root/.symfony/bin/symfony /usr/local/bin/symfony
 
-RUN mkdir /.ansible && chown 1000:1000 /.ansible
+RUN mkdir /var/www/.ssh && chown www-data:www-data /var/www/.ssh && \
+    mkdir /var/www/.ansible && chown www-data:www-data /var/www/.ansible
 
-ARG USER_ID=1000
-ARG GROUP_ID=1000
-ARG USER=user
-RUN groupadd -g $GROUP_ID $USER && \
-    useradd -u $USER_ID -s /bin/sh -g $USER --create-home $USER && \
-    mkdir /home/$USER/.ssh && chown $USER:$USER /home/$USER/.ssh
+# ARG USER_ID=1000
+# ARG GROUP_ID=1000
+# ARG USER=user
 
-USER $USER
-USER root
+#    $USER
+
+# RUN groupadd -g $GROUP_ID $USER && \
+#     useradd -u $USER_ID -s /bin/sh -g $USER --create-home $USER
+# RUN mkdir /home/$USER/.ssh && chown $USER:$USER /home/$USER/.ssh && \
+#     mkdir /.ansible && chown $USER:$USER /.ansible
+
 
 WORKDIR /app
+
+ADD docker/php/symfony-entry-point.sh /
+ENTRYPOINT  ["/bin/bash", "/symfony-entry-point.sh"]
 
 # Test image
 FROM dev AS test
 
-## Copy project files to workdir
-COPY front/assets assets
-COPY front/bin bin
-COPY front/config config
-COPY front/fixtures fixtures
-COPY front/public public
-COPY front/src src
-COPY front/migrations migrations
-COPY front/templates templates
-COPY front/tests tests
-COPY front/translations translations
 COPY front/composer.json \
     front/composer.lock \
-    front/package.json \
-    front/yarn.lock \
-    front/webpack.config.js \
-    # postcss.config.js \
     ./
 
-
-# Copy ansible and terraform
-COPY ansible ansible
-COPY terraform terraform
-
-#  Run build with root
-USER root
-
-# Install application dependencies
+# Install php dependencies
 RUN APP_ENV=prod composer install \
     --no-dev \
     --no-interaction \
@@ -96,9 +73,32 @@ RUN APP_ENV=prod composer install \
     --no-scripts \
     --no-cache
 
+
+# Install node dependencies and build assets
+COPY front/assets assets
+COPY front/public public
+COPY front/package.json \
+    front/yarn.lock \
+    front/webpack.config.js \
+    ./
+
 RUN yarn install \
     && yarn build \
     && rm -r node_modules
+
+## Copy project files to workdir
+COPY front/bin bin
+COPY front/config config
+COPY front/fixtures fixtures
+COPY front/src src
+COPY front/migrations migrations
+COPY front/templates templates
+COPY front/tests tests
+COPY front/translations translations
+
+# Copy ansible and terraform
+COPY ansible ansible
+COPY terraform terraform
 
 # Prod image
 FROM test AS prod
@@ -108,7 +108,6 @@ RUN rm /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 
 # php-fpm is run with www-data
 RUN mkdir var && chown -R www-data:www-data var/
-RUN chown www-data:www-data /.ansible
 USER www-data
 
 CMD  ["php-fpm"]

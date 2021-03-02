@@ -5,6 +5,7 @@ services:
         environment:
             MYSQL_ROOT_PASSWORD: app
             MYSQL_DATABASE: app
+            TZ: Europe/Paris
     phpmyadmin:
         image: phpmyadmin/phpmyadmin
         container_name: phpmyadmin
@@ -38,12 +39,17 @@ services:
             target: dev
         depends_on:
             - db
-        command: symfony server:start --port=80
+        command:
+            - /bin/bash
+            - -c
+            - |
+                symfony server:stop
+                symfony server:start --port=80
         volumes:
             - "./front:/app:rw"
             - "./terraform:/app/terraform:rw"
             - "./ansible:/app/ansible:rw"
-            #            - "vendor:/app/vendor/"
+            # - "vendor:/app/vendor/"
             - "var:/app/var/"
         ports:
             - ${PHP_PORT_HTTP:-80}:80

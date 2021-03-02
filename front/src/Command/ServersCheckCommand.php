@@ -9,6 +9,7 @@ use App\Repository\ServerRepository;
 use App\Service\ServerService;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Tools\Setup;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -75,19 +76,23 @@ class ServersCheckCommand extends Command
                         $this->entityManager->flush();
                     }
                 } elseif ($lastServerCheck !== null && $lastServerCheck->getPlayers() === 0 && $serverCheck->getPlayers() === 0) {
-                    $tolaratedIdleDate = (new DateTime())->sub(new \DateInterval('PT30M'));
-                    dump($tolaratedIdleDate);
-                    dump($lastServerCheck->getCreated());
+                    $tolaratedIdleDate = (new DateTime())->sub(new \DateInterval(sprintf('PT%sS', Server::IDLE_TIMEOUT)));
                     if ($lastServerCheck->getCreated() < $tolaratedIdleDate) {
-                        dump('MAX');
-                        die;
+                        $io->text('Pausing server...');
+                        $this->serverService->pauseServer($server);
+                        $io->text('OK');
+
+                        $io->text('Backuping server...');
+                        $this->serverService->backupServer($server);
+                        $io->text('OK');
+                        
+                        $io->text('Stopping server...');
+                        $this->serverService->stopServer($server);
+                        $io->text('OK');
                     }
                 }
             }
         }
-
-
-        $io->success('You have a new command! Now make it your own! Pass --help to see your options.');
 
         return 0;
     }

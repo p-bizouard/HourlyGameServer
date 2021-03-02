@@ -1,5 +1,5 @@
 ---
-- name: Start vhserver
+- name: Send command to vhserver
   hosts: all
   gather_facts: no
   vars:
@@ -7,12 +7,49 @@
           - start
           - stop
           - restart
+          - update
   pre_tasks:
       - assert:
             fail_msg: "Var command is not defined. Set it with -e command={{ command_list | join('|') }}"
             that:
                 - command in command_list
   tasks:
+      - name: "{{ command }} password configuration"
+        ansible.builtin.lineinfile:
+            path: /home/vhserver/lgsm/config-lgsm/vhserver/vhserver.cfg
+            regexp: "^serverpassword="
+            line: 'serverpassword="{{ lookup(''env'', ''SERVERPASSWORD'') }}"'
+        when: "lookup('env', 'SERVERPASSWORD') | default('') != ''"
+        become_user: vhserver
+        become: yes
+        ignore_errors: yes
+        vars:
+            ansible_ssh_pipelining: true
+
+      - name: "{{ command }} gameworld configuration"
+        ansible.builtin.lineinfile:
+            path: /home/vhserver/lgsm/config-lgsm/vhserver/vhserver.cfg
+            regexp: "^gameworld="
+            line: 'gameworld="{{ lookup(''env'', ''GAMEWORLD'') }}"'
+        when: "lookup('env', 'GAMEWORLD') | default('') != ''"
+        become_user: vhserver
+        become: yes
+        ignore_errors: yes
+        vars:
+            ansible_ssh_pipelining: true
+
+      - name: "{{ command }} name configuration"
+        ansible.builtin.lineinfile:
+            path: /home/vhserver/lgsm/config-lgsm/vhserver/vhserver.cfg
+            regexp: "^servername="
+            line: 'servername="{{ lookup(''env'', ''SERVERNAME'') }}"'
+        when: "lookup('env', 'SERVERNAME') | default('') != ''"
+        become_user: vhserver
+        become: yes
+        ignore_errors: yes
+        vars:
+            ansible_ssh_pipelining: true
+
       - name: "{{ command }} vhserver server"
         command: "/home/vhserver/vhserver {{ command }}"
         become_user: vhserver
@@ -21,6 +58,7 @@
         ignore_errors: yes
         vars:
             ansible_ssh_pipelining: true
+
       - name: Write stdout to local file
-        local_action: copy content={{ vh_command.stdout }} dest="{{ stdout }}"
-        when: stdout is defined
+        local_action: copy content={{ vh_command.stdout }} dest="{{ lookup('env', 'STDOUT') }}"
+        when: "lookup('env', 'STDOUT') | default('') != ''"

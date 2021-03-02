@@ -26,12 +26,17 @@ class Server
      * @Assert\NotBlank()
      * @ORM\Column(type="string")
      */
-    private string $name;
+    private ?string $name;
 
     /**
      * @ORM\Column(type="string", nullable=true)
      */
-    private string $password;
+    private ?string $password;
+
+    /**
+     * @ORM\Column(type="string", nullable=true)
+     */
+    private ?string $seed;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\User", inversedBy="ownedServers")
@@ -105,7 +110,8 @@ class Server
     private ?DateTime $updated;
     
     const SERVER_STARTED_REGEX = '/(is already running|\[.*OK.*\] Starting)/m';
-    const SERVER_STOPPED_REGEX = '/(\[.*OK.*\] Stopping|is already stopped)/m';
+    const SERVER_STOPPED_REGEX = '/(\[.*OK.*\].*Stopping|is already stopped)/m';
+    const SERVER_UPDATED_REGEX = '/(Success.*fully installed|No update available)/m';
 
     const STATE_BOOTING = 'booting';
     const STATE_BOOTED = 'booted';
@@ -123,6 +129,9 @@ class Server
     const STATE_STOPPING = 'stopping';
     const STATE_STOPPED = 'stopped';
 
+    const STATE_UPDATING = 'updating';
+    const STATE_UPDATED = 'updated';
+
     const STATE_BACKUPING = 'backuping';
     const STATE_ERROR = 'error';
     
@@ -131,6 +140,8 @@ class Server
     const ACTION_PAUSE = 'pause';
     const ACTION_STOP = 'stop';
     const ACTION_BACKUP = 'backup';
+    const ACTION_RESTORE = 'restore';
+    const ACTION_UPDATE = 'update';
 
     const SERVER_STATES = [
         self::STATE_BOOTING,
@@ -142,6 +153,8 @@ class Server
         self::STATE_RESTARTED,
         self::STATE_PAUSING,
         self::STATE_PAUSED,
+        self::STATE_UPDATING,
+        self::STATE_UPDATED,
         self::STATE_STOPPING,
         self::STATE_STOPPED,
         self::STATE_BACKUPING,
@@ -155,6 +168,8 @@ class Server
         self::STATE_RESTARTED,
         self::STATE_PAUSING,
         self::STATE_PAUSED,
+        self::STATE_UPDATING,
+        self::STATE_UPDATED,
         self::STATE_STOPPING,
         self::STATE_BACKUPING,
     ];
@@ -189,20 +204,23 @@ class Server
         self::ACTION_PAUSE => self::STATE_PAUSING,
         self::ACTION_BACKUP => self::STATE_BACKUPING,
         self::ACTION_STOP => self::STATE_STOPPING,
+        self::ACTION_UPDATE => self::STATE_UPDATING,
     ];
 
     const ACTIONS_TO_STATE = [
         self::ACTION_START => self::STATE_STARTED,
-        self::ACTION_RESTART => self::STATE_RESTARTED,
+        self::ACTION_RESTART => self::STATE_STARTED,
         self::ACTION_PAUSE => self::STATE_PAUSED,
         self::ACTION_STOP => self::STATE_STOPPED,
+        self::ACTION_UPDATE => self::STATE_UPDATED,
     ];
 
     const ACTIONS_TO_COMMAND = [
         self::ACTION_START => 'start',
         self::ACTION_RESTART => 'restart',
         self::ACTION_BACKUP => 'backup',
-        self::ACTION_PAUSE => 'stop'
+        self::ACTION_PAUSE => 'stop',
+        self::ACTION_UPDATE => 'update'
     ];
 
     const STATES_DANGER = [
@@ -214,6 +232,8 @@ class Server
         self::STATE_STARTED
     ];
 
+    const IDLE_TIMEOUT = 60 * 5;
+    
     public function __construct()
     {
         $this->serverUsers = new ArrayCollection();
@@ -256,6 +276,19 @@ class Server
             $state = $this->getLastHistory()->getState();
         }
         return in_array($state, $states);
+    }
+
+    public function getTerraformDirectory()
+    {
+        return sprintf('%s/terraform-%s', sys_get_temp_dir(), $this->getId());
+    }
+
+
+    public function setId(?int $id): self
+    {
+        $this->id = $id;
+
+        return $this;
     }
     
 
@@ -455,7 +488,7 @@ class Server
         return $this->password;
     }
 
-    public function setPassword(string $password): self
+    public function setPassword(?string $password): self
     {
         $this->password = $password;
 
@@ -500,6 +533,18 @@ class Server
     public function setLastCheck(?ServerCheck $lastCheck): self
     {
         $this->lastCheck = $lastCheck;
+
+        return $this;
+    }
+
+    public function getSeed(): ?string
+    {
+        return $this->seed;
+    }
+
+    public function setSeed(?string $seed): self
+    {
+        $this->seed = $seed;
 
         return $this;
     }

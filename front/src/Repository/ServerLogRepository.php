@@ -3,28 +3,27 @@
 namespace App\Repository;
 
 use App\Entity\Server;
+use App\Entity\ServerLog;
+use DateTime;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\Common\Collections\Collection;
-use Doctrine\ORM\ORMException;
 use Doctrine\Persistence\ManagerRegistry;
-use InvalidArgumentException;
-use RuntimeException;
+use Symfony\Component\Validator\Constraints\Date;
 
 /**
- * @method Server|null find($id, $lockMode = null, $lockVersion = null)
- * @method Server|null findOneBy(array $criteria, array $orderBy = null)
- * @method Server[]    findAll()
- * @method Server[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @method ServerLog|null find($id, $lockMode = null, $lockVersion = null)
+ * @method ServerLog|null findOneBy(array $criteria, array $orderBy = null)
+ * @method ServerLog[]    findAll()
+ * @method ServerLog[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
-class ServerRepository extends ServiceEntityRepository
+class ServerLogRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
-        parent::__construct($registry, Server::class);
+        parent::__construct($registry, ServerLog::class);
     }
 
     // /**
-    //  * @return Server[] Returns an array of Server objects
+    //  * @return ServerLog[] Returns an array of ServerLog objects
     //  */
     /*
     public function findByExampleField($value)
@@ -41,7 +40,7 @@ class ServerRepository extends ServiceEntityRepository
     */
 
     /*
-    public function findOneBySomeField($value): ?Server
+    public function findOneBySomeField($value): ?ServerLog
     {
         return $this->createQueryBuilder('s')
             ->andWhere('s.exampleField = :val')
@@ -51,18 +50,15 @@ class ServerRepository extends ServiceEntityRepository
         ;
     }
     */
-
-    /**
-     * Return all started servers
-     *
-     * @return Server[]
-     */
-    public function findAllStarted(): array
+    
+    public function findLastLogs(Server $server, DateTime $date)
     {
         return $this->createQueryBuilder('s')
-            ->join('s.lastHistory', 'lh')
-            ->where('lh.state = :state')
-            ->setParameter('state', Server::STATE_STARTED)
+            ->andWhere('s.server = :server')
+            ->andWhere('s.created >= :date')
+            ->setParameter('server', $server)
+            ->setParameter('date', $date)
+            ->orderBy('s.id', 'DESC')
             ->getQuery()
             ->getResult()
         ;

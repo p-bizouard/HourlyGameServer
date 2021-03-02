@@ -16,8 +16,8 @@
             OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') | default('Default', True) }}"
             OS_PROJECT_DOMAIN_NAME: "{{ lookup('env', 'OS_PROJECT_DOMAIN_NAME') | default('Default', True) }}"
             OS_REGION_NAME: "{{ lookup('env', 'OS_REGION_NAME') | regex_replace('^([A-Z]+)([0-9]+)$', '\\1') }}"
-            RESTIC_PASSWORD: "{{ lookup('env', 'SERVER_ID') | default('t5Wyeh8Wygmh4dmPLS8DKpNuCeBTbn', True) }}"
-            RESTIC_REPOSITORY: swift:backup-valheim:/{{ lookup('env', 'SERVER_ID') | default('server1', True) }}"
+            RESTIC_PASSWORD: "{{ lookup('env', 'SERVER_ID')}}"
+            RESTIC_REPOSITORY: "swift:saves:/{{ lookup('env', 'SERVER_ID') }}"
       - name: Restore VHServer home config directory
         shell: restic restore latest --target / --path /home/vhserver/lgsm
         become: yes
@@ -31,5 +31,5 @@
             OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') | default('Default', True) }}"
             OS_PROJECT_DOMAIN_NAME: "{{ lookup('env', 'OS_PROJECT_DOMAIN_NAME') | default('Default', True) }}"
             OS_REGION_NAME: "{{ lookup('env', 'OS_REGION_NAME') | regex_replace('^([A-Z]+)([0-9]+)$', '\\1') }}"
-            RESTIC_PASSWORD: "{{ lookup('env', 'SERVER_ID') | default('t5Wyeh8Wygmh4dmPLS8DKpNuCeBTbn', True) }}"
-            RESTIC_REPOSITORY: swift:backup-valheim:/{{ lookup('env', 'SERVER_ID') | default('server1', True) }}"
+            RESTIC_PASSWORD: "{{ lookup('env', 'SERVER_ID') }}"
+            RESTIC_REPOSITORY: "swift:saves:/{{ lookup('env', 'SERVER_ID') }}"

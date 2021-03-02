@@ -2,31 +2,35 @@
     "variables": {
         "game": "",
         "image_name": "",
-        "source_image": "",
+        "source_image_name": "",
         "ssh_user": "",
         "flavor": "",
         "ovh_os_username": "{{env `OS_USERNAME`}}",
         "ovh_os_password": "{{env `OS_PASSWORD`}}",
         "ovh_project": "{{env `OS_TENANT_ID`}}",
-        "ovh_region": "{{env `OS_REGION_NAME`}}"
+        "ovh_region": "{{env `OS_REGION_NAME`}}",
+        "timestamp": "{{ timestamp }}"
     },
-    "builders": [{
-        "type": "openstack",
-        "identity_endpoint": "https://auth.cloud.ovh.net/v3.0/",
-        "username": "{{user `ovh_os_username`}}",
-        "password": "{{user `ovh_os_key`}}",
-        "tenant_id": "{{user `ovh_project`}}",
-        "region": "{{user `ovh_region`}}",
-        "flavor": "{{user `flavor`}}",
-        "source_image": "{{user `source_image`}}",
-        "ssh_username": "{{user `ssh_user`}}",
-        "image_name": "{{user `image_name`}}"
-    }],
+    "builders": [
+        {
+            "type": "openstack",
+            "identity_endpoint": "https://auth.cloud.ovh.net/v3.0/",
+            "username": "{{user `ovh_os_username`}}",
+            "password": "{{user `ovh_os_key`}}",
+            "tenant_id": "{{user `ovh_project`}}",
+            "region": "{{user `ovh_region`}}",
+            "flavor": "{{user `flavor`}}",
+            "source_image_name": "{{user `source_image_name`}}",
+            "ssh_username": "{{user `ssh_user`}}",
+            "image_name": "{{user `image_name`}} - {{user `timestamp`}}"
+        }
+    ],
     "provisioners": [
-      {
-        "type": "ansible",
-        "user": "{{user `ssh_user`}}",
-        "playbook_file": "../valheim-packer.yml"
-      }
+        {
+            "type": "ansible",
+            "user": "{{user `ssh_user`}}",
+            "playbook_file": "../ansible/valheim-packer.yml",
+            "inventory_directory": "../ansible/inventories/valheim"
+        }
     ]
 }

@@ -32,3 +32,40 @@ $("#modal-delete-serverUser").on("show.bs.modal", function (e) {
 $("[data-moment-fromnow]").each(function () {
     $(this).text(moment($(this).data("moment-fromnow")).fromNow());
 });
+
+$(".card-actions a").on("click", function (e) {
+    $(".card-actions a").addClass("disabled");
+    $(this).find("svg").remove();
+    $(this).html('<i class="fas fa-cog fa-spin"></i>' + $(this).text());
+
+    const currentDate = new Date();
+
+    $.get($(this).attr("href"));
+
+    setInterval(function () {
+        $.get(
+            SERVER_LOGS_URL + "?date=" + currentDate.toISOString(),
+            function (results) {
+                $("#server-logs").html("");
+                results.forEach(function (result) {
+                    let $li = $("<li/>").text(
+                        result.created +
+                            " - " +
+                            result.type +
+                            " - " +
+                            result.message
+                    );
+
+                    if (result.type === "success") {
+                        $li.addClass("text-success");
+                    } else if (result.type === "error") {
+                        $li.addClass("text-danger");
+                    }
+
+                    $("#server-logs").append($li);
+                });
+            }
+        );
+    }, 5000);
+    e.preventDefault();
+});

@@ -3,6 +3,18 @@
   hosts: valheim
   gather_facts: no
   tasks:
+      - name: Ensure directories exists
+        ansible.builtin.file:
+            path: "{{ item }}"
+            state: directory
+            mode: "0755"
+        become: yes
+        become_user: vhserver
+        with_items:
+            - /home/vhserver/.config/
+            - /home/vhserver/lgsm/
+        vars:
+            ansible_ssh_pipelining: true
       - name: Init restic repo
         shell: restic init
         become: yes
@@ -16,8 +28,8 @@
             OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') | default('Default', True) }}"
             OS_PROJECT_DOMAIN_NAME: "{{ lookup('env', 'OS_PROJECT_DOMAIN_NAME') | default('Default', True) }}"
             OS_REGION_NAME: "{{ lookup('env', 'OS_REGION_NAME') | regex_replace('^([A-Z]+)([0-9]+)$', '\\1') }}"
-            RESTIC_PASSWORD: "{{ lookup('env', 'SERVER_ID') | default('t5Wyeh8Wygmh4dmPLS8DKpNuCeBTbn', True) }}"
-            RESTIC_REPOSITORY: swift:backup-valheim:/{{ lookup('env', 'SERVER_ID') | default('server1', True) }}"
+            RESTIC_PASSWORD: "{{ lookup('env', 'SERVER_ID') }}"
+            RESTIC_REPOSITORY: "swift:saves:/{{ lookup('env', 'SERVER_ID') }}"
         failed_when: false
       - name: Backup VHServer home directory
         shell: "restic backup {{ item }} --exclude .htop"
@@ -32,8 +44,8 @@
             OS_USER_DOMAIN_NAME: "{{ lookup('env', 'OS_USER_DOMAIN_NAME') | default('Default', True) }}"
             OS_PROJECT_DOMAIN_NAME: "{{ lookup('env', 'OS_PROJECT_DOMAIN_NAME') | default('Default', True) }}"
             OS_REGION_NAME: "{{ lookup('env', 'OS_REGION_NAME') | regex_replace('^([A-Z]+)([0-9]+)$', '\\1') }}"
-            RESTIC_PASSWORD: "{{ lookup('env', 'SERVER_ID') | default('t5Wyeh8Wygmh4dmPLS8DKpNuCeBTbn', True) }}"
-            RESTIC_REPOSITORY: swift:backup-valheim:/{{ lookup('env', 'SERVER_ID') | default('server1', True) }}"
+            RESTIC_PASSWORD: "{{ lookup('env', 'SERVER_ID') }}"
+            RESTIC_REPOSITORY: "swift:saves:/{{ lookup('env', 'SERVER_ID') }}"
         with_items:
             - /home/vhserver/.config/
             - /home/vhserver/lgsm/

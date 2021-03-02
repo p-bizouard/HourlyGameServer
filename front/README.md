@@ -44,6 +44,7 @@ docker-compose up
 docker cp .openrc "$(docker-compose ps -q php)":/mnt/.openrc
 docker cp id_rsa "$(docker-compose ps -q php)":/mnt/id_rsa
 docker-compose exec php chmod 0600 /mnt/id_rsa
+docker-compose exec php chown www-data: /mnt/id_rsa
 ```
 
 ### Access to your containers

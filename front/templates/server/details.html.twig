@@ -20,13 +20,13 @@
         <div class="container-fluid">
             <div class="row">
                 <div class="col-lg-6">
-                    <div class="card card-primary card-outline">
+                    <div class="card card-primary card-outline card-actions">
                         <div class="card-header">
                             <h3 class="card-title">Server actions</h3>
                         </div>
                         <div class="card-body">
                             {# Start only if not already started #}
-                            {% if not server.isInStates(constant('App\\Entity\\Server::STARTED_STATES')) %}
+                            {% if server.lastState != constant('App\\Entity\\Server::STATE_STARTED') %}
                                 <a class="btn btn-app bg-success" href="{{ path('server_action', {'id': server.id, 'action': constant('App\\Entity\\Server::ACTION_START')}) }}">
                                     <i class="fas fa-play"></i> Start
                                 </a>
@@ -35,6 +35,9 @@
                                 or server.isInStates(constant('App\\Entity\\Server::STARTED_STATES')) %}
                                 <a class="btn btn-app" href="{{ path('server_action', {'id': server.id, 'action': constant('App\\Entity\\Server::ACTION_BACKUP')}) }}">
                                     <i class="fas fa-save"></i> Save
+                                </a>
+                                <a class="btn btn-app" href="{{ path('server_action', {'id': server.id, 'action': constant('App\\Entity\\Server::ACTION_RESTORE')}) }}">
+                                    <i class="fas fa-recycle"></i> Restore last backup
                                 </a>
                                 <a class="btn btn-app" href="{{ path('server_action', {'id': server.id, 'action': constant('App\\Entity\\Server::ACTION_RESTART')}) }}">
                                     <i class="fas fa-redo"></i> Restart
@@ -46,6 +49,10 @@
                                     <i class="fas fa-stop"></i> Stop
                                 </a>
                             {% endif %}
+
+                            <ul id="server-logs" class="list list-unstyled">
+
+                            </ul>
                         </div>
                     </div>
 
@@ -68,6 +75,10 @@
                                     <td>{{ server.password ? server.password : '-' }}</td>
                                 </tr>
                                 <tr>
+                                    <th>Seed</th>
+                                    <td>{{ server.seed ? server.seed : '-' }}</td>
+                                </tr>
+                                <tr>
                                     <th>Game</th>
                                     <td>{{ server.game.name }}</td>
                                 </tr>
@@ -76,8 +87,8 @@
                                     <td>{{ server.instance.name }}</td>
                                 </tr>
                                 <tr>
-                                    <th>Players</th>
-                                    <td>{{ players ?  "yes" : "no"}}</td>
+                                    <th>Connected players</th>
+                                    <td>{{ players ?  players | length : "no"}}</td>
                                 </tr>
                             </table>
                         </div>
@@ -136,80 +147,92 @@
 
 
 
-    <div class="modal fade" id="modal-delete-serverUser" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                {{ form_start(formRemoveServerUser) }}
-                    <div class="modal-header">
-                        <h4 class="modal-title">Remove co-manager</h4>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">×</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <p>Remove user __USER__ ?</p>
-                        <div class="d-none">
-                            {{ form_widget(formRemoveServerUser.serverUser) }}
+    {% if formRemoveServerUser is not null %}
+        <div class="modal fade" id="modal-delete-serverUser" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    {{ form_start(formRemoveServerUser) }}
+                        <div class="modal-header">
+                            <h4 class="modal-title">Remove co-manager</h4>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">×</span>
+                            </button>
                         </div>
-                    </div>
-                    <div class="modal-footer justify-content-between">
-                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                        {{ form_widget(formRemoveServerUser.submit, {'attr': {'class': 'btn btn-danger'}}) }}
-                    </div>
-                {{ form_end(formRemoveServerUser) }}
-            </div>
-          <!-- /.modal-content -->
-        </div>
-        <!-- /.modal-dialog -->
-    </div>
-
-    <div class="modal fade" id="modal-edit-server" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                {{ form_start(formEditServer) }}
-                    <div class="modal-header">
-                        <h4 class="modal-title">Edit server</h4>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">×</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        {{ form_row(formEditServer.name) }}
-                        {{ form_row(formEditServer.password) }}
-                        {{ form_row(formEditServer.instance) }}
-                    </div>
-                    <div class="modal-footer justify-content-between">
-                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                        {{ form_widget(formEditServer.submit) }}
-                    </div>
-                {{ form_end(formEditServer) }}
-            </div>
-          <!-- /.modal-content -->
-        </div>
-        <!-- /.modal-dialog -->
-    </div>
-
-    <div class="modal fade" id="modal-add-serveruser" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                {{ form_start(formAddServerUser) }}
-                    <div class="modal-header">
-                        <h4 class="modal-title">Add co-manager</h4>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">×</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        {{ form_row(formAddServerUser.user) }}
-                    </div>
-                    <div class="modal-footer justify-content-between">
-                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                        {{ form_widget(formAddServerUser.submit) }}
-                    </div>
-                {{ form_end(formAddServerUser) }}
-            </div>
+                        <div class="modal-body">
+                            <p>Remove user __USER__ ?</p>
+                            <div class="d-none">
+                                {{ form_widget(formRemoveServerUser.serverUser) }}
+                            </div>
+                        </div>
+                        <div class="modal-footer justify-content-between">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            {{ form_widget(formRemoveServerUser.submit, {'attr': {'class': 'btn btn-danger'}}) }}
+                        </div>
+                    {{ form_end(formRemoveServerUser) }}
+                </div>
             <!-- /.modal-content -->
+            </div>
+            <!-- /.modal-dialog -->
         </div>
-        <!-- /.modal-dialog -->
+    {% endif %}
+
+    {% if formEditServer is not null %}
+        <div class="modal fade" id="modal-edit-server" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    {{ form_start(formEditServer) }}
+                        <div class="modal-header">
+                            <h4 class="modal-title">Edit server</h4>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">×</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            {{ form_row(formEditServer.name) }}
+                            {{ form_row(formEditServer.password) }}
+                            {{ form_row(formEditServer.instance) }}
+                        </div>
+                        <div class="modal-footer justify-content-between">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            {{ form_widget(formEditServer.submit) }}
+                        </div>
+                    {{ form_end(formEditServer) }}
+                </div>
+            <!-- /.modal-content -->
+            </div>
+            <!-- /.modal-dialog -->
+        </div>
+    {% endif %}
+
+    {% if formAddServerUser is not null %}
+        <div class="modal fade" id="modal-add-serveruser" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    {{ form_start(formAddServerUser) }}
+                        <div class="modal-header">
+                            <h4 class="modal-title">Add co-manager</h4>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">×</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            {{ form_row(formAddServerUser.user) }}
+                        </div>
+                        <div class="modal-footer justify-content-between">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            {{ form_widget(formAddServerUser.submit) }}
+                        </div>
+                    {{ form_end(formAddServerUser) }}
+                </div>
+                <!-- /.modal-content -->
+            </div>
+            <!-- /.modal-dialog -->
+        {% endif %}
     </div>
+{% endblock %}
+
+{% block bottomjavascripts %}
+<script>
+    var SERVER_LOGS_URL='{{ path("server_logs", {id: server.id}) }}';
+</script>
 {% endblock %}

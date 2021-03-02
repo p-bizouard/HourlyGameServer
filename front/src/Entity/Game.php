@@ -59,22 +59,30 @@ class Game
      * @ORM\Column(type="datetime")
      */
     private ?DateTime $updated;
-
-    public function getPasswordConstraints(): array
+    
+    public static function getSeedConstraints(): array
     {
-        switch ($this->name) {
-            case 'valheim':
-                return [
-                    new Assert\NotBlank(),
-                    new Assert\Length([
-                        'min' => 5,
-                    ])
-                    
-                ];
-            default:
-                return [];
-            }
+        return [
+            new Assert\NotBlank([
+                'groups' => array('valheim')
+            ]),
+        ];
     }
+    
+    public static function getPasswordConstraints(): array
+    {
+        return [
+            new Assert\NotBlank([
+                'groups' => array('valheim')
+            ]),
+            new Assert\Length([
+                'min' => 5,
+                'groups' => array('valheim')
+            ])
+            
+        ];
+    }
+
     public function __construct()
     {
         $this->servers = new ArrayCollection();

@@ -14,6 +14,7 @@ use Symfony\Component\Form\Extension\Core\Type\RepeatedType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -22,7 +23,6 @@ class OrderServerType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
-
             ->add('game', EntityType::class, [
                 'class' => Game::class
             ])
@@ -33,8 +33,14 @@ class OrderServerType extends AbstractType
                 }
             ])
             ->add('name', TextType::class)
+            ->add('seed', TextType::class, [
+                'required' => false,
+                'constraints' => Game::getSeedConstraints(),
+                'help' => 'Obligatoire pour valheim, ne peut être modifié par la suite'
+            ])
             ->add('password', TextType::class, [
                 'required' => false,
+                'constraints' => Game::getPasswordConstraints(),
                 'help' => 'Un mot de passe est obligatoire pour Valheim. 5 caractères minimums'
             ])
             ->add('submit', SubmitType::class, [
@@ -48,6 +54,18 @@ class OrderServerType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => Server::class,
+            'validation_groups' => function (FormInterface $form) {
+                $groups = ['Default'];
+
+                /** @var Game */
+                $game = $form->get('game')->getData();
+
+                if ($game !== null) {
+                    $groups[] = $game->getName();
+                }
+    
+                return $groups;
+            }
         ]);
     }
 }

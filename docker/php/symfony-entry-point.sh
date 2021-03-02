@@ -11,7 +11,6 @@ else
     composer install --no-interaction --optimize-autoloader
   fi
 
-  # php bin/console assets:install
   php bin/console doctrine:migrations:migrate -n
 
   echo Exec $@

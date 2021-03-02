@@ -1,0 +1,50 @@
+---
+- name: Wait for /var/lib/dpkg/lock-frontend to be released
+  shell: while lsof /var/lib/dpkg/lock-frontend ; do sleep 10; done;
+  changed_when: false
+
+- name: Upgrade all apt packages
+  apt: upgrade=dist update_cache=yes
+
+- name: Upgrade system
+  apt:
+- name: Install basic utilities
+  apt:
+      name:
+          - zsh
+          - curl
+          - wget
+          - file
+          - tar
+          - bzip2
+          - gzip
+          - unzip
+          - bsdmainutils
+          - python
+          - util-linux
+          - ca-certificates
+          - python3-pip
+          - restic
+          - fuse
+          - procps
+  vars:
+      ansible_ssh_pipelining: true
+
+- name: Install swift and keystone clients
+  pip:
+      executable: pip3
+      name:
+          - python-keystoneclient
+          - python-swiftclient
+  vars:
+      ansible_ssh_pipelining: true
+
+- name: Set authorized keys
+  ansible.posix.authorized_key:
+      user: ubuntu
+      state: present
+      key: "{{ item }}"
+  with_file:
+      - public_keys/hgs.id_rsa.pub
+  vars:
+      ansible_ssh_pipelining: true

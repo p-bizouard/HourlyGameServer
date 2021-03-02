@@ -16,6 +16,7 @@ terraform {
   }
 }
 
+
 provider "openstack" {
   region = var.instance_region
   auth_url = "https://auth.cloud.ovh.net/v3"
@@ -26,15 +27,6 @@ resource "openstack_compute_instance_v2" "main_instance" {
   region      = var.instance_region
   image_name  = var.instance_image
   flavor_name = var.instance_type
-  key_pair    = var.key_pair
-}
-
-resource "local_file" "gitlab_ansible_inventory" {
-  filename = "../inventories/${var.game}/hosts"
-  content = templatefile("./ansible-inventory.tpl", {
-    server = openstack_compute_instance_v2.main_instance,
-    game = var.game
-  })
 }
 
 output "instance_public_ip" {

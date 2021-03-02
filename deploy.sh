@@ -9,4 +9,4 @@ helm upgrade -i --namespace hgs hgs ./helm/ \
 --set imagePullSecret="harbor-hgs" \
 --set-file envFile=front/.env.k8s \
 --set-file privateKey=id_rsa \
---set-file openrc=.openrc
+--set-file openrc=.openrc.k8s

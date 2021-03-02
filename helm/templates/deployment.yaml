@@ -38,6 +38,12 @@ spec:
             - name: "env"
               mountPath: "/app/.env"
               subPath: ".env"
+            - name: "openrc"
+              mountPath: "/mnt/.openrc"
+              subPath: ".openrc"
+            - name: "id-rsa"
+              mountPath: "/mnt/id_rsa"
+              subPath: "id_rsa"
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
         - name: redis
@@ -78,6 +84,12 @@ spec:
         - name: public-data
           emptyDir: {}
         - name: "env"
+          secret:
+            secretName: "{{ .Release.Name }}-secret-env-php"
+        - name: "openrc"
+          secret:
+            secretName: "{{ .Release.Name }}-secret-env-php"
+        - name: "id-rsa"
           secret:
             secretName: "{{ .Release.Name }}-secret-env-php"
         - name: nginx-conf

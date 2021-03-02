@@ -1,7 +1,7 @@
 {
     "game": "valheim",
     "image_name": "Valheim base server",
-    "source_image": "46c06697-b769-47df-b5fb-57b8f0b9fb80",
+    "source_image_name": "Ubuntu 20.04",
     "ssh_user": "ubuntu",
-    "flavor": "s1-4"
+    "flavor": "s1-8"
 }

@@ -16,7 +16,7 @@ App\Entity\User:
 App\Entity\Game:
     valheim:
         name: valheim
-        image: Valheim base server
+        image: Valheim base server - 1614536663
         port: 2456
         queryport: 2457
 App\Entity\Instance:
@@ -41,6 +41,12 @@ App\Entity\Instance:
         ram: 8
         cpu: 2
 App\Entity\Server:
+    server-10:
+        id: "10"
+        owner: "@admin"
+        instance: "@b2-7"
+        game: "@valheim"
+        name: "Serveur PM"
     server-1:
         owner: "@admin"
         instance: "@b2-7"
@@ -57,6 +63,10 @@ App\Entity\ServerHistory:
         state: shutdown
         ip: 1.1.1.1
 App\Entity\ServerUser:
+    server-user-10:
+        user: "@admin"
+        server: "@server-10"
+        role: "owner"
     server-user-1:
         user: "@admin"
         server: "@server-1"
