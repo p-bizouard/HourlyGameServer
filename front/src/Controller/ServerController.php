@@ -141,9 +141,7 @@ class ServerController extends AbstractController
                 $this->addFlash('danger', $e->getMessage());
             }
         }
-
-        $this->addFlash('success', 'Action done');
-        
+       
         $this->serverService->log($server, 'success', sprintf('%s... done ! You can reload the view.', $action));
         
         return new JsonResponse(['status' => 'OK']);
