@@ -1,11 +1,20 @@
 <?php
 
+/*
+ * This file is part of PHP CS Fixer.
+ *
+ * (c) Fabien Potencier <fabien@symfony.com>
+ *     Dariusz Rumiński <dariusz.ruminski@gmail.com>
+ *
+ * This source file is subject to the MIT license that is bundled
+ * with this source code in the file LICENSE.
+ */
+
 namespace App\Controller;
 
 use App\Entity\Server;
-use App\Entity\User;
-use App\Entity\ServerHistory;
 use App\Entity\ServerUser;
+use App\Entity\User;
 use App\Form\AddServerUserType;
 use App\Form\EditServerType;
 use App\Form\OrderServerType;
@@ -16,35 +25,24 @@ use DateTime;
 use DateTimeZone;
 use Exception;
 use JMS\Serializer\SerializationContext;
-use JMS\Serializer\Serializer;
 use JMS\Serializer\SerializerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\BrowserKit\History;
-use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Form\FormFactory;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
-use Symfony\Component\Process\Exception\ProcessFailedException;
-use Symfony\Component\Process\Process;
 use Symfony\Component\Routing\Annotation\Route;
-
-use function DeepCopy\deep_copy;
 
 class ServerController extends AbstractController
 {
-    private ServerService $serverService;
-    private ServerLogRepository $serverLogRepository;
-    private SerializerInterface $serializer;
-    
-    public function __construct(ServerService $serverService, ServerLogRepository $serverLogRepository, SerializerInterface $serializer)
-    {
-        $this->serverService = $serverService;
-        $this->serverLogRepository = $serverLogRepository;
-        $this->serializer = $serializer;
+    public function __construct(
+        private ServerService $serverService,
+        private ServerLogRepository $serverLogRepository,
+        private SerializerInterface $serializer
+    ) {
     }
+
     /**
      * @Route("/server/order", name="server_order")
      */
@@ -59,7 +57,7 @@ class ServerController extends AbstractController
         if ($form->isSubmitted()) {
             if ($form->isValid()) {
                 $newServer->setOwner($this->getUser());
-                
+
                 $serverUser = new ServerUser();
                 $serverUser->setServer($newServer);
                 $serverUser->setUser($newServer->getOwner());
@@ -70,7 +68,6 @@ class ServerController extends AbstractController
                 $em->persist($serverUser);
                 $em->flush();
 
-
                 $this->addFlash('success', 'Server ordered');
 
                 return $this->redirectToRoute('server_details', ['id' => $newServer->getId()]);
@@ -78,10 +75,10 @@ class ServerController extends AbstractController
         }
 
         return $this->render('server/order.html.twig', [
-            'form' => $form->createView()
+            'form' => $form->createView(),
         ]);
     }
-    
+
     /**
      * @Route("/server/{id}/{action}", name="server_action", requirements={"action"="start|restart|pause|stop|backup|monitor|restore"})
      */
@@ -93,40 +90,40 @@ class ServerController extends AbstractController
         if (!$user->canAccessServer($server)) {
             throw new UnauthorizedHttpException('Cannot access this server');
         }
-        
+
         // if ($server->getLastState() !== null && $server->getLastState() !== 'shutdown') {
         //     return $this->redirectToRoute('server_details', ['id' => $server->getId()]);
         // }
         $this->serverService->initTerraform($server);
 
-        if ($action === Server::ACTION_START) {
+        if (Server::ACTION_START === $action) {
             $needRestore = false;
             if ($server->isInStates(Server::STOPPED_STATES)) {
                 $needRestore = true;
             }
 
             $this->serverService->bootServer($server);
-            
+
             try {
-                if ($needRestore && $server->getLastBackup() !== null) {
+                if ($needRestore && null !== $server->getLastBackup()) {
                     $this->addFlash('info', 'Backup restored');
 
                     $this->serverService->restoreBackup($server);
                 }
-        
+
                 $this->serverService->startServer($server);
             } catch (Exception $e) {
                 $this->addFlash('danger', $e->getMessage());
             }
-        } elseif (in_array($action, [Server::ACTION_RESTART])) {
+        } elseif (\in_array($action, [Server::ACTION_RESTART], true)) {
             $this->serverService->restartServer($server);
-        } elseif (in_array($action, [Server::ACTION_STOP])) {
+        } elseif (\in_array($action, [Server::ACTION_STOP], true)) {
             $this->serverService->pauseServer($server);
             $this->serverService->backupServer($server);
             $this->serverService->stopServer($server);
-        } elseif (in_array($action, [Server::ACTION_PAUSE])) {
+        } elseif (\in_array($action, [Server::ACTION_PAUSE], true)) {
             $this->serverService->pauseServer($server);
-        } elseif (in_array($action, [Server::ACTION_RESTORE])) {
+        } elseif (\in_array($action, [Server::ACTION_RESTORE], true)) {
             try {
                 $this->serverService->pauseServer($server);
                 $this->serverService->restoreBackup($server);
@@ -134,31 +131,29 @@ class ServerController extends AbstractController
             } catch (Exception $e) {
                 $this->addFlash('danger', $e->getMessage());
             }
-        } elseif (in_array($action, [Server::ACTION_BACKUP])) {
+        } elseif (\in_array($action, [Server::ACTION_BACKUP], true)) {
             try {
                 $this->serverService->backupServer($server);
             } catch (Exception $e) {
                 $this->addFlash('danger', $e->getMessage());
             }
         }
-       
+
         $this->serverService->log($server, 'success', sprintf('%s... done ! You can reload the view.', $action));
-        
+
         return new JsonResponse(['status' => 'OK']);
     }
-    
-    
+
     /**
      * @Route("/server/{id}/logs", name="server_logs")
      */
     public function serverLogs(Request $request, Server $server): Response
     {
         $logs = $this->serverLogRepository->findLastLogs($server, (new Datetime($request->query->get('date')))->setTimezone(new DateTimeZone(date_default_timezone_get())));
-        
 
-        return new Response($this->serializer->serialize($logs, 'json', SerializationContext::create()->setGroups(array('list'))), 200, ['Content-Type' => 'application/json']);
+        return new Response($this->serializer->serialize($logs, 'json', SerializationContext::create()->setGroups(['list'])), 200, ['Content-Type' => 'application/json']);
     }
-    
+
     /**
      * @Route("/server/{id}", name="server_details")
      */
@@ -173,20 +168,19 @@ class ServerController extends AbstractController
 
         $serverUser = new ServerUser();
         $formAddServerUser = $this->createForm(AddServerUserType::class, $serverUser, [
-            'server'=> $server
+            'server' => $server,
         ]);
-        
+
         $formAddServerUser->handleRequest($request);
 
         if ($formAddServerUser->isSubmitted()) {
             if ($formAddServerUser->isValid()) {
                 $serverUser->setServer($server);
                 $serverUser->setRole(ServerUser::ROLE_USER);
-                
+
                 $em = $this->getDoctrine()->getManager();
                 $em->persist($serverUser);
                 $em->flush();
-
 
                 $this->addFlash('success', 'User authorized');
 
@@ -203,18 +197,17 @@ class ServerController extends AbstractController
             if ($formRemoveServerUser->isSubmitted()) {
                 if ($formRemoveServerUser->isValid()) {
                     $serverUser = $formRemoveServerUser->get('serverUser')->getData();
-                    
+
                     $em = $this->getDoctrine()->getManager();
                     $em->remove($serverUser);
                     $em->flush();
-
 
                     $this->addFlash('success', 'User removed');
 
                     return $this->redirectToRoute('server_details', ['id' => $server->getId()]);
                 }
             }
-            
+
             $formEditServer = $this->createForm(EditServerType::class, $server, [
                 'server' => $server,
             ]);
@@ -226,7 +219,6 @@ class ServerController extends AbstractController
                     $em->persist($server);
                     $em->flush();
 
-
                     $this->addFlash('success', 'Server updated');
 
                     return $this->redirectToRoute('server_details', ['id' => $server->getId()]);
@@ -235,17 +227,16 @@ class ServerController extends AbstractController
         }
 
         $players = $this->serverService->getPlayers($server);
-        
+
         return $this->render('server/details.html.twig', [
             'server' => $server,
             'players' => $players,
             'formAddServerUser' => $formAddServerUser->createView(),
-            'formRemoveServerUser' => isset($formRemoveServerUser) ? $formRemoveServerUser ->createView() : null,
-            'formEditServer' => isset($formEditServer) ? $formEditServer ->createView() : null,
-            
+            'formRemoveServerUser' => isset($formRemoveServerUser) ? $formRemoveServerUser->createView() : null,
+            'formEditServer' => isset($formEditServer) ? $formEditServer->createView() : null,
         ]);
     }
-    
+
     /**
      * @Route("/test/{timeout}/{timelimit}", name="test")
      */
@@ -254,6 +245,7 @@ class ServerController extends AbstractController
         set_time_limit($timelimit);
         sleep($timeout);
         echo 'ok';
-        die;
+
+        exit;
     }
 }

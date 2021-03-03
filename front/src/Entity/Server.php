@@ -1,5 +1,15 @@
 <?php
 
+/*
+ * This file is part of PHP CS Fixer.
+ *
+ * (c) Fabien Potencier <fabien@symfony.com>
+ *     Dariusz Rumiński <dariusz.ruminski@gmail.com>
+ *
+ * This source file is subject to the MIT license that is bundled
+ * with this source code in the file LICENSE.
+ */
+
 namespace App\Entity;
 
 use App\Repository\ServerRepository;
@@ -15,6 +25,130 @@ use Symfony\Component\Validator\Constraints as Assert;
  */
 class Server
 {
+    const SERVER_STARTED_REGEX = '/(is already running|\[.*OK.*\] Starting)/m';
+    const SERVER_STOPPED_REGEX = '/(\[.*OK.*\].*Stopping|is already stopped)/m';
+    const SERVER_UPDATED_REGEX = '/(Success.*fully installed|No update available|\[.*OK.*\] Starting)/m';
+
+    const STATE_BOOTING = 'booting';
+    const STATE_BOOTED = 'booted';
+
+    const STATE_STARTING = 'starting';
+    const STATE_RESTORING = 'restoring';
+    const STATE_STARTED = 'started';
+
+    const STATE_RESTARTING = 'restarting';
+    const STATE_RESTARTED = 'restarted';
+
+    const STATE_PAUSING = 'pausing';
+    const STATE_PAUSED = 'paused';
+
+    const STATE_STOPPING = 'stopping';
+    const STATE_STOPPED = 'stopped';
+
+    const STATE_UPDATING = 'updating';
+    const STATE_UPDATED = 'updated';
+
+    const STATE_BACKUPING = 'backuping';
+    const STATE_ERROR = 'error';
+
+    const ACTION_START = 'start';
+    const ACTION_RESTART = 'restart';
+    const ACTION_PAUSE = 'pause';
+    const ACTION_STOP = 'stop';
+    const ACTION_BACKUP = 'backup';
+    const ACTION_RESTORE = 'restore';
+    const ACTION_UPDATE = 'update';
+
+    const SERVER_STATES = [
+        self::STATE_BOOTING,
+        self::STATE_BOOTED,
+        self::STATE_STARTING,
+        self::STATE_RESTORING,
+        self::STATE_STARTED,
+        self::STATE_RESTARTING,
+        self::STATE_RESTARTED,
+        self::STATE_PAUSING,
+        self::STATE_PAUSED,
+        self::STATE_UPDATING,
+        self::STATE_UPDATED,
+        self::STATE_STOPPING,
+        self::STATE_STOPPED,
+        self::STATE_BACKUPING,
+    ];
+
+    const STARTED_STATES = [
+        self::STATE_STARTING,
+        self::STATE_RESTORING,
+        self::STATE_STARTED,
+        self::STATE_RESTARTING,
+        self::STATE_RESTARTED,
+        self::STATE_PAUSING,
+        self::STATE_PAUSED,
+        self::STATE_UPDATING,
+        self::STATE_UPDATED,
+        self::STATE_STOPPING,
+        self::STATE_BACKUPING,
+    ];
+
+    const STOPPED_STATES = [
+        null,
+        self::STATE_STOPPED,
+    ];
+
+    const PAUSED_STATES = [
+        null,
+        self::STATE_PAUSING,
+        self::STATE_PAUSED,
+        self::STATE_BACKUPING,
+    ];
+
+    const START_ACTIONS = [
+        self::ACTION_START,
+        self::ACTION_RESTART,
+        self::ACTION_STOP,
+    ];
+
+    const STOP_ACTIONS = [
+        self::ACTION_START,
+        self::ACTION_RESTART,
+        self::ACTION_STOP,
+    ];
+
+    const ACTIONS_TO_PRE_STATE = [
+        self::ACTION_START => self::STATE_STARTING,
+        self::ACTION_RESTART => self::STATE_RESTARTING,
+        self::ACTION_PAUSE => self::STATE_PAUSING,
+        self::ACTION_BACKUP => self::STATE_BACKUPING,
+        self::ACTION_STOP => self::STATE_STOPPING,
+        self::ACTION_UPDATE => self::STATE_UPDATING,
+    ];
+
+    const ACTIONS_TO_STATE = [
+        self::ACTION_START => self::STATE_STARTED,
+        self::ACTION_RESTART => self::STATE_STARTED,
+        self::ACTION_PAUSE => self::STATE_PAUSED,
+        self::ACTION_STOP => self::STATE_STOPPED,
+        self::ACTION_UPDATE => self::STATE_UPDATED,
+    ];
+
+    const ACTIONS_TO_COMMAND = [
+        self::ACTION_START => 'start',
+        self::ACTION_RESTART => 'restart',
+        self::ACTION_BACKUP => 'backup',
+        self::ACTION_PAUSE => 'stop',
+        self::ACTION_UPDATE => 'update',
+    ];
+
+    const STATES_DANGER = [
+        self::STATE_STOPPED,
+        self::STATE_STOPPING,
+        self::STATE_ERROR,
+    ];
+    const STATES_SUCCESS = [
+        self::STATE_STARTED,
+    ];
+
+    const IDLE_TIMEOUT = 60 * 15;
     /**
      * @ORM\Id
      * @ORM\GeneratedValue
@@ -108,132 +242,7 @@ class Server
      * @ORM\Column(type="datetime")
      */
     private ?DateTime $updated;
-    
-    const SERVER_STARTED_REGEX = '/(is already running|\[.*OK.*\] Starting)/m';
-    const SERVER_STOPPED_REGEX = '/(\[.*OK.*\].*Stopping|is already stopped)/m';
-    const SERVER_UPDATED_REGEX = '/(Success.*fully installed|No update available)/m';
 
-    const STATE_BOOTING = 'booting';
-    const STATE_BOOTED = 'booted';
-    
-    const STATE_STARTING = 'starting';
-    const STATE_RESTORING = 'restoring';
-    const STATE_STARTED = 'started';
-    
-    const STATE_RESTARTING = 'restarting';
-    const STATE_RESTARTED = 'restarted';
-    
-    const STATE_PAUSING = 'pausing';
-    const STATE_PAUSED = 'paused';
-
-    const STATE_STOPPING = 'stopping';
-    const STATE_STOPPED = 'stopped';
-
-    const STATE_UPDATING = 'updating';
-    const STATE_UPDATED = 'updated';
-
-    const STATE_BACKUPING = 'backuping';
-    const STATE_ERROR = 'error';
-    
-    const ACTION_START = 'start';
-    const ACTION_RESTART = 'restart';
-    const ACTION_PAUSE = 'pause';
-    const ACTION_STOP = 'stop';
-    const ACTION_BACKUP = 'backup';
-    const ACTION_RESTORE = 'restore';
-    const ACTION_UPDATE = 'update';
-
-    const SERVER_STATES = [
-        self::STATE_BOOTING,
-        self::STATE_BOOTED,
-        self::STATE_STARTING,
-        self::STATE_RESTORING,
-        self::STATE_STARTED,
-        self::STATE_RESTARTING,
-        self::STATE_RESTARTED,
-        self::STATE_PAUSING,
-        self::STATE_PAUSED,
-        self::STATE_UPDATING,
-        self::STATE_UPDATED,
-        self::STATE_STOPPING,
-        self::STATE_STOPPED,
-        self::STATE_BACKUPING,
-    ];
-
-    const STARTED_STATES = [
-        self::STATE_STARTING,
-        self::STATE_RESTORING,
-        self::STATE_STARTED,
-        self::STATE_RESTARTING,
-        self::STATE_RESTARTED,
-        self::STATE_PAUSING,
-        self::STATE_PAUSED,
-        self::STATE_UPDATING,
-        self::STATE_UPDATED,
-        self::STATE_STOPPING,
-        self::STATE_BACKUPING,
-    ];
-
-    const STOPPED_STATES = [
-        null,
-        self::STATE_STOPPED
-    ];
-
-    const PAUSED_STATES = [
-        null,
-        self::STATE_PAUSING,
-        self::STATE_PAUSED,
-        self::STATE_BACKUPING,
-    ];
-
-    const START_ACTIONS = [
-        self::ACTION_START,
-        self::ACTION_RESTART,
-        self::ACTION_STOP
-    ];
-
-    const STOP_ACTIONS = [
-        self::ACTION_START,
-        self::ACTION_RESTART,
-        self::ACTION_STOP
-    ];
-
-    const ACTIONS_TO_PRE_STATE = [
-        self::ACTION_START => self::STATE_STARTING,
-        self::ACTION_RESTART => self::STATE_RESTARTING,
-        self::ACTION_PAUSE => self::STATE_PAUSING,
-        self::ACTION_BACKUP => self::STATE_BACKUPING,
-        self::ACTION_STOP => self::STATE_STOPPING,
-        self::ACTION_UPDATE => self::STATE_UPDATING,
-    ];
-
-    const ACTIONS_TO_STATE = [
-        self::ACTION_START => self::STATE_STARTED,
-        self::ACTION_RESTART => self::STATE_STARTED,
-        self::ACTION_PAUSE => self::STATE_PAUSED,
-        self::ACTION_STOP => self::STATE_STOPPED,
-        self::ACTION_UPDATE => self::STATE_UPDATED,
-    ];
-
-    const ACTIONS_TO_COMMAND = [
-        self::ACTION_START => 'start',
-        self::ACTION_RESTART => 'restart',
-        self::ACTION_BACKUP => 'backup',
-        self::ACTION_PAUSE => 'stop',
-        self::ACTION_UPDATE => 'update'
-    ];
-
-    const STATES_DANGER = [
-        self::STATE_STOPPED,
-        self::STATE_STOPPING,
-        self::STATE_ERROR
-    ];
-    const STATES_SUCCESS = [
-        self::STATE_STARTED
-    ];
-
-    const IDLE_TIMEOUT = 60 * 5;
-    
     public function __construct()
     {
         $this->serverUsers = new ArrayCollection();
@@ -244,25 +253,28 @@ class Server
 
     public function getStatusBootstrapColor(): string
     {
-        if (in_array($this->getLastState(), self::STATES_SUCCESS)) {
+        if (\in_array($this->getLastState(), self::STATES_SUCCESS, true)) {
             return 'success';
-        } elseif (in_array($this->getLastState(), self::STATES_DANGER)) {
-            return 'danger';
-        } else {
-            return 'warning';
         }
+        if (\in_array($this->getLastState(), self::STATES_DANGER, true)) {
+            return 'danger';
+        }
+
+        return 'warning';
     }
+
     public function getLastState(): ?string
     {
         if (!$this->getLastHistory()) {
-            return  self::STATE_STOPPED;
+            return self::STATE_STOPPED;
         }
+
         return $this->getLastHistory()->getState();
     }
 
     public function getStartedSince(): int
     {
-        if ($this->getLastHistory() === null) {
+        if (null === $this->getLastHistory()) {
             return null;
         }
 
@@ -275,7 +287,8 @@ class Server
         if ($this->getLastHistory()) {
             $state = $this->getLastHistory()->getState();
         }
-        return in_array($state, $states);
+
+        return \in_array($state, $states, true);
     }
 
     public function getTerraformDirectory()
@@ -283,14 +296,12 @@ class Server
         return sprintf('%s/terraform-%s', sys_get_temp_dir(), $this->getId());
     }
 
-
     public function setId(?int $id): self
     {
         $this->id = $id;
 
         return $this;
     }
-    
 
     public function getId(): ?int
     {

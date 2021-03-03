@@ -1,5 +1,5 @@
 # Dev target
-FROM php:7.4-fpm AS dev
+FROM php:8-fpm AS dev
 
 RUN apt update
 RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -;
@@ -10,7 +10,16 @@ RUN apt install -y libcurl4-gnutls-dev zlib1g-dev libicu-dev g++ libxml2-dev lib
     && rm -rf /var/lib/apt/lists/*
     
 RUN pecl install redis xdebug
-RUN docker-php-ext-install intl json mbstring pdo  pdo_mysql zip bcmath sockets gd opcache 
+RUN docker-php-ext-install intl
+RUN docker-php-ext-install mbstring
+RUN docker-php-ext-install pdo
+RUN docker-php-ext-install  pdo_mysql
+RUN docker-php-ext-install zip
+RUN docker-php-ext-install bcmath
+RUN docker-php-ext-install sockets
+RUN docker-php-ext-install gd
+RUN docker-php-ext-install opcache
+ 
 RUN docker-php-ext-enable redis
 RUN docker-php-ext-enable xdebug
 RUN echo 'memory_limit = 512M' >> /usr/local/etc/php/conf.d/docker-php-memlimit.ini;
