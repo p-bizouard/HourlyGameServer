@@ -46,7 +46,7 @@ class ServerController extends AbstractController
     /**
      * @Route("/server/order", name="server_order")
      */
-    public function serverOrder(Request $request, FormFactoryInterface $formFactory): Response
+    public function serverOrder(Request $request): Response
     {
         $newServer = new Server();
         $form = $this->createForm(OrderServerType::class, $newServer, [
@@ -235,17 +235,5 @@ class ServerController extends AbstractController
             'formRemoveServerUser' => isset($formRemoveServerUser) ? $formRemoveServerUser->createView() : null,
             'formEditServer' => isset($formEditServer) ? $formEditServer->createView() : null,
         ]);
-    }
-
-    /**
-     * @Route("/test/{timeout}/{timelimit}", name="test")
-     */
-    public function servertest(int $timeout, int $timelimit): void
-    {
-        set_time_limit($timelimit);
-        sleep($timeout);
-        echo 'ok';
-
-        exit;
     }
 }
