@@ -29,6 +29,12 @@ $("#modal-delete-serverUser").on("show.bs.modal", function (e) {
     $(this).find("#remove_server_user_serverUser").val(serverUserId);
 });
 
+$("[data-moment-duration]").each(function () {
+    $(this).text(
+        moment.duration($(this).data("moment-duration"), "seconds").humanize()
+    );
+});
+
 $("[data-moment-fromnow]").each(function () {
     $(this).text(moment($(this).data("moment-fromnow")).fromNow());
 });

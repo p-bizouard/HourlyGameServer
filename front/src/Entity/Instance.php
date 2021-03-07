@@ -1,5 +1,15 @@
 <?php
 
+/*
+ * This file is part of PHP CS Fixer.
+ *
+ * (c) Fabien Potencier <fabien@symfony.com>
+ *     Dariusz Rumiński <dariusz.ruminski@gmail.com>
+ *
+ * This source file is subject to the MIT license that is bundled
+ * with this source code in the file LICENSE.
+ */
+
 namespace App\Entity;
 
 use App\Repository\InstanceRepository;
@@ -43,6 +53,11 @@ class Instance
     private $servers;
 
     /**
+     * @ORM\Column(type="float")
+     */
+    private string $price;
+
+    /**
      * @Gedmo\Timestampable(on="create")
      * @ORM\Column(type="datetime")
      */
@@ -59,7 +74,7 @@ class Instance
         $this->servers = new ArrayCollection();
     }
 
-    public function __toString() : string
+    public function __toString(): string
     {
         return $this->name;
     }
@@ -155,6 +170,18 @@ class Instance
                 $server->setInstance(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getPrice(): ?float
+    {
+        return $this->price;
+    }
+
+    public function setPrice(float $price): self
+    {
+        $this->price = $price;
 
         return $this;
     }

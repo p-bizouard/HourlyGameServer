@@ -67,6 +67,22 @@
                                     <td><span class="badge badge-{{ server.getStatusBootstrapColor }}">{{ server.getLastState() }}</span></td>
                                 </tr>
                                 <tr>
+                                    <th>Powered on</th>
+                                    <td>
+                                        {% if server.getlastHistory() is not null %}<span data-moment-duration="{{ server.getLastHistory().getSecondsStarted }}"></span> ({{ server.getLastHistory.started | format_datetime }})
+                                        {% else %}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Billing</th>
+                                    <td>
+                                        {% if server.getLastHistory() %}<p class="m-0">This session : {{ server.getLastHistory.getBill() }}€</p>{% endif %}
+                                        {% if server.getCurrentMonthBill() %}<p class="m-0">This month : {{ server.getCurrentMonthBill() }}€</p>{% endif %}
+                                        {% if server.getLastMonthBill() %}<p class="m-0">Last month : {{ server.getLastMonthBill() }}€</p>{% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
                                     <th>Access</th>
                                     <td>{{ server.isInStates(constant('App\\Entity\\Server::STARTED_STATES')) ? server.lastHistory.ip ~ ':' ~server.game.port : '-' }}</td>
                                 </tr>

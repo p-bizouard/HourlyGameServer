@@ -47,7 +47,7 @@ class ServerHistory
     /**
      * @ORM\Column(type="string")
      */
-    private string $state = 'booting';
+    private string $state = Server::STATE_BOOTING;
 
     /**
      * @ORM\Column(type="integer", nullable=true)
@@ -75,6 +75,39 @@ class ServerHistory
      * @ORM\Column(type="datetime", nullable=true)
      */
     private ?DateTime $stopped = null;
+
+    public function getSecondsStarted(): ?int
+    {
+        $stoppedOrNow = Server::STATE_STOPPED === $this->getState() ? $this->getStopped() : new Datetime();
+
+        if (null === $stoppedOrNow || null === $this->getStarted()) {
+            return 0;
+        }
+
+        return $stoppedOrNow->format('U') - $this->getStarted()->format('U');
+    }
+
+    public function getHoursBilled(): int
+    {
+        /** @var Datetime */
+        $stoppedOrNow = Server::STATE_STOPPED === $this->getState() ? $this->getStopped() : new Datetime();
+        /** @var Datetime */
+        $started = $this->getStarted();
+
+        if (null === $stoppedOrNow || null === $started) {
+            return 0;
+        }
+
+        $stoppedOrNow->setTime($stoppedOrNow->format('H'), 59, 59);
+        $started->setTime($started->format('H'), 0, 0);
+
+        return ceil(($stoppedOrNow->format('U') - $started->format('U')) / 3600);
+    }
+
+    public function getBill(): float
+    {
+        return $this->getHoursBilled() * $this->getInstance()->getPrice();
+    }
 
     public function getId(): ?int
     {

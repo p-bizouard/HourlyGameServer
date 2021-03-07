@@ -29,6 +29,8 @@ $config
         '@PhpCsFixer:risky' => true,
         'header_comment' => ['header' => $header],
         'list_syntax' => ['syntax' => 'long'],
+        'phpdoc_to_comment' => false,
+
     ])
     ->setFinder($finder)
 ;

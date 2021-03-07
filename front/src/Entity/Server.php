@@ -16,6 +16,7 @@ use App\Repository\ServerRepository;
 use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -273,13 +274,41 @@ class Server
         return $this->getLastHistory()->getState();
     }
 
-    public function getStartedSince(): int
+    public function getCurrentMonthBill()
     {
-        if (null === $this->getLastHistory()) {
-            return null;
+        $from = (new DateTime('first day of this month'))->setTime(0, 0, 0);
+        $to = (new DateTime('last day of this month'))->setTime(23, 59, 59);
+
+        $criteria = Criteria::create()
+            ->where(Criteria::expr()->gte('created', $from))
+            ->andWhere(Criteria::expr()->lte('created', $to))
+        ;
+
+        return $this->getBillFromHistory($this->getHistory()->matching($criteria));
+    }
+
+    public function getLastMonthBill()
+    {
+        $from = (new DateTime('first day of last month'))->setTime(0, 0, 0);
+        $to = (new DateTime('last day of last month'))->setTime(23, 59, 59);
+
+        $criteria = Criteria::create()
+            ->where(Criteria::expr()->gte('created', $from))
+            ->andWhere(Criteria::expr()->lte('created', $to))
+        ;
+
+        return $this->getBillFromHistory($this->getHistory()->matching($criteria));
+    }
+
+    public function getBillFromHistory(Collection $historyCollection)
+    {
+        $billed = 0;
+        /** @var ServerHistory */
+        foreach ($historyCollection as $history) {
+            $billed += $history->getBill();
         }
 
-        return (new Datetime())->format('u') - $this->getLastHistory()->getStarted()->format('u');
+        return $billed;
     }
 
     public function isInStates(array $states): bool
@@ -454,7 +483,7 @@ class Server
     }
 
     /**
-     * @return Collection|ServerHistory[]
+     * @return ArrayCollection<ServerHistory>
      */
     public function getHistory(): Collection
     {

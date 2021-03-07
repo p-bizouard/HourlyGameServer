@@ -19,7 +19,7 @@
 <div class="content">
     <div class="container-fluid">
         <div class="row">
-            <div class="col-lg-6">
+            <div class="col-lg-8">
                 <div class="card card-primary card-outline">
                     <div class="card-header">
                         <h3 class="card-title">Servers list</h3>
@@ -32,7 +32,8 @@
                                         <th>Server</th>
                                         <th>Game</th>
                                         <th>Status</th>
-                                        <th>Started since</th>
+                                        <th>Powered on</th>
+                                        <th>Billing</th>
                                         <th>Co-managers</th>
                                     </tr>
                                 </thead>
@@ -42,7 +43,17 @@
                                             <td><a href="{{ path('server_details', {id: serverUser.server.id }) }}">{{ serverUser.server.name }}</a></td>
                                             <td>{{ serverUser.server.game.name }}</td>
                                             <td><span class="badge badge-{{ serverUser.server.getStatusBootstrapColor }}">{{ serverUser.server.getLastState() }}</span></td>
-                                            {% if serverUser.server.lastHistory %}<td data-moment-fromnow="{{ serverUser.server.lastHistory.started | date('c') }}"></td>{% else %}<td>-</td>{% endif %}
+                                            
+                                            <td>
+                                                {% if serverUser.server.getLastHistory() is not null %}<span data-moment-duration="{{ serverUser.server.getLastHistory().getSecondsStarted }}"></span>
+                                                {% else %}-{% endif %}
+                                            </td>
+                                            <td>
+                                                {% if serverUser.server.getLastHistory() %}<p class="m-0">This session : {{ serverUser.server.getLastHistory.getBill() }}€</p>{% endif %}
+                                                {% if serverUser.server.getCurrentMonthBill() %}<p class="m-0">This month : {{ serverUser.server.getCurrentMonthBill() }}€</p>{% endif %}
+                                                {% if serverUser.server.getLastMonthBill() %}<p class="m-0">Last month : {{ serverUser.server.getLastMonthBill() }}€</p>{% endif %}
+                                            </td>
+
                                             <td>
                                                 <ul class="list list-unstyled">
                                                     {% for serverCoManager in serverUser.server.serverUsers %}
@@ -57,7 +68,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-lg-6">
+            <div class="col-lg-4">
                 <div class="card card-primary card-outline">
                     <div class="card-header">
                         <h3 class="card-title">Features roadmap</h3>
@@ -85,17 +96,12 @@
                                 <small class="badge badge-danger">P1</small>
                             </li>
                             <li>
-                                <div class="icheck-primary d-inline ml-2"><input type="checkbox"></div>
-                                <span class="text">Couper le serveur au bout de 30 minutes d'inactivité</span>
+                                <div class="icheck-primary d-inline ml-2"><input type="checkbox" checked></div>
+                                <span class="text">Couper le serveur au bout de 15 minutes d'inactivité</span>
                                 <small class="badge badge-warning">P2</small>
                             </li>
                             <li>
-                                <div class="icheck-primary d-inline ml-2"><input type="checkbox"></div>
-                                <span class="text">Récupérer l'état du TFState régulièrement et mettre à jour le statut</span>
-                                <small class="badge badge-warning">P2</small>
-                            </li>
-                            <li>
-                                <div class="icheck-primary d-inline ml-2"><input type="checkbox"></div>
+                                <div class="icheck-primary d-inline ml-2"><input type="checkbox" checked></div>
                                 <span class="text">Calcul de la facturation</span>
                                 <small class="badge badge-warning">P2</small>
                             </li>
