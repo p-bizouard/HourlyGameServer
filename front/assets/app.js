@@ -42,7 +42,7 @@ $(".card-actions a").on("click", function (e) {
 
     $.get($(this).attr("href"));
 
-    setInterval(function () {
+    const getLogs = function () {
         $.get(
             SERVER_LOGS_URL + "?date=" + currentDate.toISOString(),
             function (results) {
@@ -64,8 +64,11 @@ $(".card-actions a").on("click", function (e) {
 
                     $("#server-logs").append($li);
                 });
+                setTimeout(getLogs, 5000);
             }
         );
-    }, 5000);
+    };
+    getLogs();
+
     e.preventDefault();
 });

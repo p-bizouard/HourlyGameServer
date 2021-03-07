@@ -149,6 +149,7 @@ class Server
     ];
 
     const IDLE_TIMEOUT = 60 * 15;
+
     /**
      * @ORM\Id
      * @ORM\GeneratedValue

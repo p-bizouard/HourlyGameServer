@@ -91,52 +91,48 @@ class ServerController extends AbstractController
             throw new UnauthorizedHttpException('Cannot access this server');
         }
 
-        // if ($server->getLastState() !== null && $server->getLastState() !== 'shutdown') {
-        //     return $this->redirectToRoute('server_details', ['id' => $server->getId()]);
-        // }
-        $this->serverService->initTerraform($server);
+        try {
+            // $this->serverService->showTerraform($server);
+            $this->serverService->initTerraform($server);
 
-        if (Server::ACTION_START === $action) {
-            $needRestore = false;
-            if ($server->isInStates(Server::STOPPED_STATES)) {
-                $needRestore = true;
-            }
+            switch ($action) {
+                case Server::ACTION_START:
+                    $this->serverService->bootServer($server);
+                    $this->serverService->startServer($server);
 
-            $this->serverService->bootServer($server);
+                    break;
 
-            try {
-                if ($needRestore && null !== $server->getLastBackup()) {
-                    $this->addFlash('info', 'Backup restored');
+                case Server::ACTION_RESTART:
+                    $this->serverService->restartServer($server);
 
+                    break;
+
+                case Server::ACTION_STOP:
+                    $this->serverService->pauseServer($server);
+                    $this->serverService->backupServer($server);
+                    $this->serverService->stopServer($server);
+
+                    break;
+
+                case Server::ACTION_PAUSE:
+                    $this->serverService->pauseServer($server);
+
+                    break;
+
+                case Server::ACTION_RESTORE:
+                    $this->serverService->pauseServer($server);
                     $this->serverService->restoreBackup($server);
-                }
+                    $this->serverService->startServer($server);
 
-                $this->serverService->startServer($server);
-            } catch (Exception $e) {
-                $this->addFlash('danger', $e->getMessage());
+                    break;
+
+                case Server::ACTION_BACKUP:
+                    $this->serverService->backupServer($server);
+
+                    break;
             }
-        } elseif (\in_array($action, [Server::ACTION_RESTART], true)) {
-            $this->serverService->restartServer($server);
-        } elseif (\in_array($action, [Server::ACTION_STOP], true)) {
-            $this->serverService->pauseServer($server);
-            $this->serverService->backupServer($server);
-            $this->serverService->stopServer($server);
-        } elseif (\in_array($action, [Server::ACTION_PAUSE], true)) {
-            $this->serverService->pauseServer($server);
-        } elseif (\in_array($action, [Server::ACTION_RESTORE], true)) {
-            try {
-                $this->serverService->pauseServer($server);
-                $this->serverService->restoreBackup($server);
-                $this->serverService->startServer($server);
-            } catch (Exception $e) {
-                $this->addFlash('danger', $e->getMessage());
-            }
-        } elseif (\in_array($action, [Server::ACTION_BACKUP], true)) {
-            try {
-                $this->serverService->backupServer($server);
-            } catch (Exception $e) {
-                $this->addFlash('danger', $e->getMessage());
-            }
+        } catch (Exception $e) {
+            $this->addFlash('danger', $e->getMessage());
         }
 
         $this->serverService->log($server, 'success', sprintf('%s... done ! You can reload the view.', $action));
@@ -149,7 +145,9 @@ class ServerController extends AbstractController
      */
     public function serverLogs(Request $request, Server $server): Response
     {
-        $logs = $this->serverLogRepository->findLastLogs($server, (new Datetime($request->query->get('date')))->setTimezone(new DateTimeZone(date_default_timezone_get())));
+        $datetime = (new Datetime($request->query->get('date')))->setTimezone(new DateTimeZone(date_default_timezone_get()));
+
+        $logs = $this->serverLogRepository->findLastLogs($server, $datetime);
 
         return new Response($this->serializer->serialize($logs, 'json', SerializationContext::create()->setGroups(['list'])), 200, ['Content-Type' => 'application/json']);
     }

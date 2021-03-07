@@ -136,6 +136,16 @@ class ServerService
         $this->log($server, ServerLog::SUCCESS, 'Init terraform');
     }
 
+    public function showTerraform(Server $server)
+    {
+        $this->log($server, ServerLog::INFO, 'Show terraform');
+        $out = $this->execTerraform($server, 'show');
+        dump($out);
+
+        exit;
+        $this->log($server, ServerLog::SUCCESS, 'Show terraform');
+    }
+
     public function bootServer(Server $server)
     {
         // Generate new History
@@ -149,14 +159,15 @@ class ServerService
             $this->entityManager->persist($server);
             $this->entityManager->flush();
             $this->log($server, ServerLog::INFO, Server::STATE_BOOTING);
+
+            $alreadyBooted = false;
         } else {
+            $alreadyBooted = true;
             $this->log($server, ServerLog::INFO, 'Already booted, applying');
         }
 
         // Boot
         $this->execTerraform($server, 'apply -auto-approve');
-
-        $this->log($server, ServerLog::SUCCESS, Server::STATE_BOOTED);
 
         // Get IP
         $this->log($server, ServerLog::INFO, 'Get IP');
@@ -167,7 +178,14 @@ class ServerService
         if (null === $lastHistory->getStarted()) {
             $lastHistory->setStarted(new \DateTime());
         }
-        $lastHistory->setIp($jsonOutput['instance_public_ip']['value']);
+
+        $newIp = $jsonOutput['instance_public_ip']['value'];
+
+        // If IP changed, an error occured from last state, so we consider it rebooted, therefore we restore it
+        if ($newIp !== $lastHistory->getIp()) {
+            $alreadyBooted = false;
+            $lastHistory->setIp($newIp);
+        }
 
         if ($server->isInStates([Server::STATE_BOOTING])) {
             $lastHistory->setState(Server::STATE_BOOTED);
@@ -177,6 +195,10 @@ class ServerService
 
         $this->entityManager->persist($lastHistory);
         $this->entityManager->flush();
+
+        if (!$alreadyBooted && null !== $server->getLastBackup()) {
+            $this->restoreBackup($server);
+        }
     }
 
     public function installServer(Server $server)
@@ -272,7 +294,8 @@ class ServerService
     public function restoreBackup(Server $server)
     {
         $lastState = $server->getLastState();
-        if (Server::STATE_PAUSED !== $server->getLastState()) {
+
+        if (!\in_array($lastState, [Server::STATE_BOOTED, Server::STATE_PAUSED], true)) {
             $this->pauseServer($server);
         }
 
