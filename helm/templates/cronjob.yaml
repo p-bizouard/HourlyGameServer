@@ -1,31 +1,47 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-    name: servers-check
-    labels: "{{ - include "hgs.labels" . | nindent 4 }}"
+  name: servers-check
+  labels:
+    {{- include "hgs.labels" . | nindent 4 }}
 spec:
-    schedule: "*/5 * * * *"
-    jobTemplate:
+  schedule: "*/5 * * * *"
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      template:
         spec:
-            template:
-                spec:
-                    containers:
-                        - name: servers-check
-                          securityContext:
-                            "{{- toYaml .Values.securityContext | nindent 12 }}"
-                          image: "{{ .Values.image.repository }}/php:{{ .Values.image.tag | default .Chart.AppVersion }}"
-                          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
-                          volumeMounts:
-                            - name: "env"
-                              mountPath: "/app/.env"
-                              subPath: ".env"
-                            - name: "openrc"
-                              mountPath: "/mnt/.openrc"
-                              subPath: ".openrc"
-                            - name: "id-rsa"
-                              mountPath: "/mnt/id_rsa"
-                              subPath: "id_rsa"
-                          command:
-                              - /app/bin/console
-                              - app:servers:check
-                    restartPolicy: OnFailure
+          {{- if .Values.imagePullSecret }}
+          imagePullSecrets: 
+            - name: {{ .Values.imagePullSecret }}
+          {{- end }}
+          restartPolicy: Never
+          containers:
+            - name: servers-check
+              image: "{{ .Values.image.repository }}/php:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              volumeMounts:
+                - name: "env"
+                  mountPath: "/app/.env"
+                  subPath: ".env"
+                - name: "openrc"
+                  mountPath: "/mnt/.openrc"
+                  subPath: ".openrc"
+                - name: "id-rsa"
+                  mountPath: "/mnt/id_rsa"
+                  subPath: "id_rsa"
+              command:
+                - /app/bin/console
+                - app:servers:check
+          volumes:
+            - name: "env"
+              secret:
+                secretName: "{{ .Release.Name }}-secret-env-php"
+            - name: "openrc"
+              secret:
+                secretName: "{{ .Release.Name }}-secret-env-php"
+            - name: "id-rsa"
+              secret:
+                secretName: "{{ .Release.Name }}-secret-env-php"
+          restartPolicy: OnFailure

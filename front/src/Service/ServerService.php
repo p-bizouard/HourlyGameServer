@@ -158,8 +158,11 @@ class ServerService
 
             $this->entityManager->persist($server);
             $this->entityManager->flush();
-            $this->log($server, ServerLog::INFO, Server::STATE_BOOTING);
 
+            $this->log($server, ServerLog::INFO, Server::STATE_BOOTING);
+        }
+
+        if (Server::STATE_BOOTING === $server->getLastState()) {
             $alreadyBooted = false;
         } else {
             $alreadyBooted = true;
@@ -187,7 +190,7 @@ class ServerService
             $lastHistory->setIp($newIp);
         }
 
-        if ($server->isInStates([Server::STATE_BOOTING])) {
+        if (Server::STATE_BOOTING === $server->getLastState()) {
             $lastHistory->setState(Server::STATE_BOOTED);
         }
 
