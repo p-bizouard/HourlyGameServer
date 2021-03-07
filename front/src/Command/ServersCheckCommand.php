@@ -85,8 +85,11 @@ class ServersCheckCommand extends Command
                 }
             } elseif (null !== $lastServerCheck && 0 === $lastServerCheck->getPlayers() && 0 === $serverCheck->getPlayers()) {
                 $tolaratedIdleDate = (new DateTime())->sub(new \DateInterval(sprintf('PT%sS', Server::IDLE_TIMEOUT)));
-                if ($lastServerCheck->getCreated() < $tolaratedIdleDate && $server->getLastHistory()->getCreated() < $tolaratedIdleDate) {
+                $lastServerOperation = max($server->getLastHistory()->getCreated(), $server->getLastHistory()->getUpdated());
+                if ($lastServerCheck->getCreated() < $tolaratedIdleDate && $lastServerOperation < $tolaratedIdleDate) {
                     try {
+                        $this->serverService->log($server, ServerLog::INFO, 'Idle server');
+
                         $io->text('Pausing server...');
                         $this->serverService->pauseServer($server);
                         $io->text('OK');
@@ -96,6 +99,7 @@ class ServersCheckCommand extends Command
                         $io->text('OK');
 
                         $io->text('Stopping server...');
+                        $this->serverService->initTerraform($server);
                         $this->serverService->stopServer($server);
                         $io->text('OK');
                     } catch (\Exception $e) {
