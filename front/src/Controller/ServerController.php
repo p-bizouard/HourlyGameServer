@@ -13,6 +13,7 @@
 namespace App\Controller;
 
 use App\Entity\Server;
+use App\Entity\ServerLog;
 use App\Entity\ServerUser;
 use App\Entity\User;
 use App\Form\AddServerUserType;
@@ -132,6 +133,7 @@ class ServerController extends AbstractController
                     break;
             }
         } catch (Exception $e) {
+            $this->serverService->log($server, ServerLog::ERROR, $e->getMessage());
             $this->addFlash('danger', $e->getMessage());
         }
 

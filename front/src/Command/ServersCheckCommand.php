@@ -14,6 +14,7 @@ namespace App\Command;
 
 use App\Entity\Server;
 use App\Entity\ServerCheck;
+use App\Entity\ServerLog;
 use App\Repository\ServerRepository;
 use App\Service\ServerService;
 use DateTime;
@@ -85,17 +86,22 @@ class ServersCheckCommand extends Command
             } elseif (null !== $lastServerCheck && 0 === $lastServerCheck->getPlayers() && 0 === $serverCheck->getPlayers()) {
                 $tolaratedIdleDate = (new DateTime())->sub(new \DateInterval(sprintf('PT%sS', Server::IDLE_TIMEOUT)));
                 if ($lastServerCheck->getCreated() < $tolaratedIdleDate && $server->getLastHistory()->getCreated() < $tolaratedIdleDate) {
-                    $io->text('Pausing server...');
-                    $this->serverService->pauseServer($server);
-                    $io->text('OK');
+                    try {
+                        $io->text('Pausing server...');
+                        $this->serverService->pauseServer($server);
+                        $io->text('OK');
 
-                    $io->text('Backuping server...');
-                    $this->serverService->backupServer($server);
-                    $io->text('OK');
+                        $io->text('Backuping server...');
+                        $this->serverService->backupServer($server);
+                        $io->text('OK');
 
-                    $io->text('Stopping server...');
-                    $this->serverService->stopServer($server);
-                    $io->text('OK');
+                        $io->text('Stopping server...');
+                        $this->serverService->stopServer($server);
+                        $io->text('OK');
+                    } catch (\Exception $e) {
+                        $this->serverService->log($server, ServerLog::ERROR, $e->getMessage());
+                        $io->error($e->getMessage());
+                    }
                 }
             }
         }
