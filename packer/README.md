@@ -8,10 +8,11 @@ apt install packer
 
 # Use
 
-Source .openrc
+Source Openstack and python environement
 
 ```
 source ../.openrc
+source env/bin/activate
 ```
 
 # Build images
