@@ -3,5 +3,5 @@
     "image_name": "Valheim base server",
     "source_image_name": "Ubuntu 20.04",
     "ssh_user": "ubuntu",
-    "flavor": "s1-8"
+    "flavor": "b2-7"
 }

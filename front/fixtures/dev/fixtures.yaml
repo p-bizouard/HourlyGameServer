@@ -45,6 +45,21 @@ App\Entity\Instance:
         ram: 8
         cpu: 2
         price: 0.0369
+    d2-2:
+        name: d2-2
+        ram: 2
+        cpu: 1
+        price: 0.009
+    d2-4:
+        name: d2-4
+        ram: 4
+        cpu: 2
+        price: 0.018
+    d2-8:
+        name: d2-8
+        ram: 8
+        cpu: 4
+        price: 0.0325
 App\Entity\Server:
     server-10:
         id: "10"
