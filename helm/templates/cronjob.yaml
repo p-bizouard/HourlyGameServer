@@ -19,7 +19,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: servers-check
-              image: "{{ .Values.image.repository }}/php:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              image: "{{ .Values.image.repository }}{{ .Values.image.tag | default .Chart.AppVersion }}"
               imagePullPolicy: {{ .Values.image.pullPolicy }}
               volumeMounts:
                 - name: "env"
