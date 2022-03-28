@@ -8,11 +8,11 @@ apt install packer
 
 # Use
 
-Source Openstack and python environement
+Source Openstack configuration and python environment
 
 ```
 source ../.openrc
-source env/bin/activate
+source ../ansible/env/bin/activate
 ```
 
 # Build images
