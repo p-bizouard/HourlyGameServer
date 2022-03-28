@@ -49,8 +49,6 @@ services:
             - "./front:/app:rw"
             - "./terraform:/app/terraform:rw"
             - "./ansible:/app/ansible:rw"
-            # - "vendor:/app/vendor/"
-            - "var:/app/var/"
         ports:
             - ${PHP_PORT_HTTP:-80}:80
         links:
@@ -66,6 +64,3 @@ services:
         command: yarn watch
         volumes:
             - "./front:/app:rw"
-volumes:
-    var:
-    vendor:
