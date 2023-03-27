@@ -36,6 +36,11 @@ class EditServerType extends AbstractType
                 'constraints' => $server->getGame()->getPasswordConstraints(),
                 'help' => 'Un mot de passe est obligatoire pour Valheim. 5 caractères minimums'
             ])
+            ->add('seed', TextType::class, [
+                'required' => false,
+                'constraints' => Game::getSeedConstraints(),
+                'help' => 'Obligatoire pour valheim'
+            ])
             ->add('instance', EntityType::class, [
                 'class' => Instance::class,
                 'help' => 'Changer d\'instance redémarrera automatiquement le serveur',

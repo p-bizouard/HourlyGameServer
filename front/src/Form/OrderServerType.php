@@ -36,7 +36,7 @@ class OrderServerType extends AbstractType
             ->add('seed', TextType::class, [
                 'required' => false,
                 'constraints' => Game::getSeedConstraints(),
-                'help' => 'Obligatoire pour valheim, ne peut être modifié par la suite'
+                'help' => 'Obligatoire pour valheim'
             ])
             ->add('password', TextType::class, [
                 'required' => false,
