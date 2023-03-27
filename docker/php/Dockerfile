@@ -1,5 +1,5 @@
 # Dev target
-FROM php:8-fpm AS dev
+FROM php:8.1-fpm AS dev
 
 RUN apt update
 RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -;
