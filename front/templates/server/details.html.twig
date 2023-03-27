@@ -1,254 +1,412 @@
-{% extends 'base.html.twig' %}
-
-{% block title %}Hello ServerController!{% endblock %}
-
-{% block body %}
-    <!-- Content Header (Page header) -->
-    <div class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
+{% extends 'base.html.twig' %} {% block title %}Hello ServerController!{%
+endblock %} {% block body %}
+<!-- Content Header (Page header) -->
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
             <div class="col-sm-6">
                 <h1 class="m-0">Server {{ server.name }}</h1>
-            </div><!-- /.col -->
-            </div><!-- /.row -->
-        </div><!-- /.container-fluid -->
+            </div>
+            <!-- /.col -->
+        </div>
+        <!-- /.row -->
     </div>
-    <!-- /.content-header -->
+    <!-- /.container-fluid -->
+</div>
+<!-- /.content-header -->
 
-    <!-- Main content -->
-    <div class="content">
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-lg-6">
-                    <div class="card card-primary card-outline card-actions">
-                        <div class="card-header">
-                            <h3 class="card-title">Server actions</h3>
-                        </div>
-                        <div class="card-body">
-                            {# Start only if not already started #}
-                            {% if server.lastState != constant('App\\Entity\\Server::STATE_STARTED') %}
-                                <a class="btn btn-app bg-success" href="{{ path('server_action', {'id': server.id, 'action': constant('App\\Entity\\Server::ACTION_START')}) }}">
-                                    <i class="fas fa-play"></i> Start
-                                </a>
-                            {% endif %}
-                            {% if server.isInStates(constant('App\\Entity\\Server::ACTIONS_TO_PRE_STATE'))
-                                or server.isInStates(constant('App\\Entity\\Server::STARTED_STATES')) %}
-                                <a class="btn btn-app" href="{{ path('server_action', {'id': server.id, 'action': constant('App\\Entity\\Server::ACTION_BACKUP')}) }}">
-                                    <i class="fas fa-save"></i> Save
-                                </a>
-                                <a class="btn btn-app" href="{{ path('server_action', {'id': server.id, 'action': constant('App\\Entity\\Server::ACTION_RESTORE')}) }}">
-                                    <i class="fas fa-recycle"></i> Restore last backup
-                                </a>
-                                <a class="btn btn-app" href="{{ path('server_action', {'id': server.id, 'action': constant('App\\Entity\\Server::ACTION_RESTART')}) }}">
-                                    <i class="fas fa-redo"></i> Restart
-                                </a>
-                                <a class="btn btn-app" href="{{ path('server_action', {'id': server.id, 'action': constant('App\\Entity\\Server::ACTION_PAUSE')}) }}">
-                                    <i class="fas fa-pause"></i> Pause
-                                </a>
-                                <a class="btn btn-app bg-danger" href="{{ path('server_action', {'id': server.id, 'action': constant('App\\Entity\\Server::ACTION_STOP')}) }}">
-                                    <i class="fas fa-stop"></i> Stop
-                                </a>
-                            {% endif %}
-
-                            <ul id="server-logs" class="list list-unstyled">
-
-                            </ul>
-                        </div>
+<!-- Main content -->
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card card-primary card-outline card-actions">
+                    <div class="card-header">
+                        <h3 class="card-title">Server actions</h3>
                     </div>
+                    <div class="card-body">
+                        {# Start only if not already started #} {% if
+                        server.lastState !=
+                        constant('App\\Entity\\Server::STATE_STARTED') %}
+                        <a
+                            class="btn btn-app bg-success"
+                            href="{{
+                                path('server_action', {
+                                    id: server.id,
+                                    action: constant(
+                                        'App\\Entity\\Server::ACTION_START'
+                                    )
+                                })
+                            }}"
+                        >
+                            <i class="fas fa-play"></i> Start
+                        </a>
+                        {% endif %} {% if
+                        server.isInStates(constant('App\\Entity\\Server::ACTIONS_TO_PRE_STATE'))
+                        or
+                        server.isInStates(constant('App\\Entity\\Server::STARTED_STATES'))
+                        %}
+                        <a
+                            class="btn btn-app"
+                            href="{{
+                                path('server_action', {
+                                    id: server.id,
+                                    action: constant(
+                                        'App\\Entity\\Server::ACTION_BACKUP'
+                                    )
+                                })
+                            }}"
+                        >
+                            <i class="fas fa-save"></i> Save
+                        </a>
+                        <a
+                            class="btn btn-app"
+                            href="{{
+                                path('server_action', {
+                                    id: server.id,
+                                    action: constant(
+                                        'App\\Entity\\Server::ACTION_RESTORE'
+                                    )
+                                })
+                            }}"
+                        >
+                            <i class="fas fa-recycle"></i> Restore last backup
+                        </a>
+                        <a
+                            class="btn btn-app"
+                            href="{{
+                                path('server_action', {
+                                    id: server.id,
+                                    action: constant(
+                                        'App\\Entity\\Server::ACTION_RESTART'
+                                    )
+                                })
+                            }}"
+                        >
+                            <i class="fas fa-redo"></i> Restart
+                        </a>
+                        <a
+                            class="btn btn-app"
+                            href="{{
+                                path('server_action', {
+                                    id: server.id,
+                                    action: constant(
+                                        'App\\Entity\\Server::ACTION_PAUSE'
+                                    )
+                                })
+                            }}"
+                        >
+                            <i class="fas fa-pause"></i> Pause
+                        </a>
+                        <a
+                            class="btn btn-app bg-danger"
+                            href="{{
+                                path('server_action', {
+                                    id: server.id,
+                                    action: constant(
+                                        'App\\Entity\\Server::ACTION_STOP'
+                                    )
+                                })
+                            }}"
+                        >
+                            <i class="fas fa-stop"></i> Stop
+                        </a>
+                        {% endif %}
 
-                    <div class="card card-primary card-outline">
-                        <div class="card-header">
-                            <h3 class="card-title">Server details</h3>
-                        </div>
-                        <div class="card-body">
-                            <table class="table table-striped table-valign-middle">
+                        <div id="server-logs"></div>
+                    </div>
+                </div>
+
+                <div class="card card-primary card-outline">
+                    <div class="card-header">
+                        <h3 class="card-title">Server details</h3>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-striped table-valign-middle">
+                            <tr>
+                                <th>Status</th>
+                                <td>
+                                    <span
+                                        class="badge badge-{{
+                                            server.getStatusBootstrapColor
+                                        }}"
+                                        >{{ server.getLastState() }}</span
+                                    >
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Powered on</th>
+                                <td>
+                                    {% if server.getlastHistory() is not null
+                                    %}<span
+                                        data-moment-duration="{{
+                                            server.getLastHistory()
+                                                .getSecondsStarted
+                                        }}"
+                                    ></span>
+                                    ({{
+                                        server.getLastHistory.started
+                                            | format_datetime
+                                    }}) {% else %} {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Billing</th>
+                                <td>
+                                    {% if server.getLastHistory() %}
+                                    <p class="m-0">
+                                        This session :
+                                        {{ server.getLastHistory.getBill() }}€
+                                    </p>
+                                    {% endif %} {% if
+                                    server.getCurrentMonthBill() %}
+                                    <p class="m-0">
+                                        This month :
+                                        {{ server.getCurrentMonthBill() }}€
+                                    </p>
+                                    {% endif %} {% if server.getLastMonthBill()
+                                    %}
+                                    <p class="m-0">
+                                        Last month :
+                                        {{ server.getLastMonthBill() }}€
+                                    </p>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Access</th>
+                                <td>
+                                    <input
+                                        class="form-text"
+                                        disabled
+                                        value="{{ server.isInStates(constant('App\\Entity\\Server::STARTED_STATES')) ? server.lastHistory.ip ~ ':' ~server.game.port : '-' }}"
+                                    />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Password</th>
+                                <td>
+                                    {{
+                                        server.password ? server.password : "-"
+                                    }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Seed</th>
+                                <td>{{ server.seed ? server.seed : "-" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Game</th>
+                                <td>{{ server.game.name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Instance</th>
+                                <td>{{ server.instance.name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Connected players</th>
+                                <td>{{ players ?  players | length : "no"}}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="card-footer clearfix">
+                        <button
+                            type="button"
+                            class="btn btn-primary"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modal-edit-server"
+                        >
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card card-primary card-outline">
+                    <div class="card-header">
+                        <h3 class="card-title">Co-managers list</h3>
+                    </div>
+                    <div class="card-body table-responsive">
+                        <table class="table table-striped table-valign-middle">
+                            <thead>
                                 <tr>
-                                    <th>Status</th>
-                                    <td><span class="badge badge-{{ server.getStatusBootstrapColor }}">{{ server.getLastState() }}</span></td>
+                                    <th>User</th>
+                                    <th>Role</th>
+                                    {% if app.user.isOwnerOfServer(server) %}
+                                    <th>Action</th>
+                                    {% endif %}
                                 </tr>
+                            </thead>
+                            <tbody>
+                                {% for serverUser in server.serverUsers %}
                                 <tr>
-                                    <th>Powered on</th>
+                                    <td>{{ serverUser.user }}</td>
+                                    <td>{{ serverUser.role }}</td>
+                                    {% if app.user.isOwnerOfServer(server) %}
                                     <td>
-                                        {% if server.getlastHistory() is not null %}<span data-moment-duration="{{ server.getLastHistory().getSecondsStarted }}"></span> ({{ server.getLastHistory.started | format_datetime }})
-                                        {% else %}
+                                        {% if serverUser.user.id != app.user.id
+                                        %}
+                                        <button
+                                            type="button"
+                                            class="btn btn-danger"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modal-delete-serverUser"
+                                            data-user-server-id="{{
+                                                serverUser.id
+                                            }}"
+                                            data-user="{{ serverUser.user }}"
+                                        >
+                                            <i class="fas fa-user-times"></i>
+                                        </button>
                                         {% endif %}
                                     </td>
+                                    {% endif %}
                                 </tr>
-                                <tr>
-                                    <th>Billing</th>
-                                    <td>
-                                        {% if server.getLastHistory() %}<p class="m-0">This session : {{ server.getLastHistory.getBill() }}€</p>{% endif %}
-                                        {% if server.getCurrentMonthBill() %}<p class="m-0">This month : {{ server.getCurrentMonthBill() }}€</p>{% endif %}
-                                        {% if server.getLastMonthBill() %}<p class="m-0">Last month : {{ server.getLastMonthBill() }}€</p>{% endif %}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th>Access</th>
-                                    <td>{{ server.isInStates(constant('App\\Entity\\Server::STARTED_STATES')) ? server.lastHistory.ip ~ ':' ~server.game.port : '-' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Password</th>
-                                    <td>{{ server.password ? server.password : '-' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Seed</th>
-                                    <td>{{ server.seed ? server.seed : '-' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Game</th>
-                                    <td>{{ server.game.name }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Instance</th>
-                                    <td>{{ server.instance.name }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Connected players</th>
-                                    <td>{{ players ?  players | length : "no"}}</td>
-                                </tr>
-                            </table>
-                        </div>
-                        <div class="card-footer clearfix">
-                            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-edit-server">
-                                <i class="fas fa-edit"></i> Edit
-                            </button>
-                        </div>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="card card-primary card-outline">
-                        <div class="card-header">
-                            <h3 class="card-title">Co-managers list</h3>
-                        </div>
-                        <div class="card-body table-responsive">
-                            <table class="table table-striped table-valign-middle">
-                                <thead>
-                                    <tr>
-                                        <th>User</th>
-                                        <th>Role</th>
-                                        {% if app.user.isOwnerOfServer(server) %}<th>Action</th>{% endif %}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for serverUser in server.serverUsers %}
-                                        <tr>
-                                            <td>{{ serverUser.user }}</td>
-                                            <td>{{ serverUser.role }}</td>
-                                            {% if app.user.isOwnerOfServer(server) %}
-                                                <td>
-                                                    {% if serverUser.user.id != app.user.id %}
-                                                        <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#modal-delete-serverUser" data-user-server-id="{{ serverUser.id }}" data-user="{{ serverUser.user }}">
-                                                            <i class="fas fa-user-times"></i>
-                                                        </button>
-                                                    {% endif %}
-                                                </td>
-                                            {% endif %}
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="card-footer clearfix">
-                            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-add-serveruser">
-                                <i class="fas fa-user-plus"></i> Add a co-manager
-                            </button>
-                        </div>
+                    <div class="card-footer clearfix">
+                        <button
+                            type="button"
+                            class="btn btn-primary"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modal-add-serveruser"
+                        >
+                            <i class="fas fa-user-plus"></i> Add a co-manager
+                        </button>
                     </div>
                 </div>
             </div>
-            <!-- /.row -->
-        </div><!-- /.container-fluid -->
-    </div>
-    <!-- /.content -->
-
-
-
-    {% if formRemoveServerUser is not null %}
-        <div class="modal fade" id="modal-delete-serverUser" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    {{ form_start(formRemoveServerUser) }}
-                        <div class="modal-header">
-                            <h4 class="modal-title">Remove co-manager</h4>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">×</span>
-                            </button>
-                        </div>
-                        <div class="modal-body">
-                            <p>Remove user __USER__ ?</p>
-                            <div class="d-none">
-                                {{ form_widget(formRemoveServerUser.serverUser) }}
-                            </div>
-                        </div>
-                        <div class="modal-footer justify-content-between">
-                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                            {{ form_widget(formRemoveServerUser.submit, {'attr': {'class': 'btn btn-danger'}}) }}
-                        </div>
-                    {{ form_end(formRemoveServerUser) }}
-                </div>
-            <!-- /.modal-content -->
-            </div>
-            <!-- /.modal-dialog -->
         </div>
-    {% endif %}
-
-    {% if formEditServer is not null %}
-        <div class="modal fade" id="modal-edit-server" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    {{ form_start(formEditServer) }}
-                        <div class="modal-header">
-                            <h4 class="modal-title">Edit server</h4>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">×</span>
-                            </button>
-                        </div>
-                        <div class="modal-body">
-                            {{ form_row(formEditServer.name) }}
-                            {{ form_row(formEditServer.password) }}
-                            {{ form_row(formEditServer.instance) }}
-                        </div>
-                        <div class="modal-footer justify-content-between">
-                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                            {{ form_widget(formEditServer.submit) }}
-                        </div>
-                    {{ form_end(formEditServer) }}
-                </div>
-            <!-- /.modal-content -->
-            </div>
-            <!-- /.modal-dialog -->
-        </div>
-    {% endif %}
-
-    {% if formAddServerUser is not null %}
-        <div class="modal fade" id="modal-add-serveruser" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    {{ form_start(formAddServerUser) }}
-                        <div class="modal-header">
-                            <h4 class="modal-title">Add co-manager</h4>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">×</span>
-                            </button>
-                        </div>
-                        <div class="modal-body">
-                            {{ form_row(formAddServerUser.user) }}
-                        </div>
-                        <div class="modal-footer justify-content-between">
-                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                            {{ form_widget(formAddServerUser.submit) }}
-                        </div>
-                    {{ form_end(formAddServerUser) }}
-                </div>
-                <!-- /.modal-content -->
-            </div>
-            <!-- /.modal-dialog -->
-        {% endif %}
+        <!-- /.row -->
     </div>
-{% endblock %}
+    <!-- /.container-fluid -->
+</div>
+<!-- /.content -->
 
-{% block bottomjavascripts %}
+{% if formRemoveServerUser is not null %}
+<div class="modal fade" id="modal-delete-serverUser" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            {{ form_start(formRemoveServerUser) }}
+            <div class="modal-header">
+                <h4 class="modal-title">Remove co-manager</h4>
+                <button
+                    type="button"
+                    class="close"
+                    data-dismiss="modal"
+                    aria-label="Close"
+                >
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Remove user __USER__ ?</p>
+                <div class="d-none">
+                    {{ form_widget(formRemoveServerUser.serverUser) }}
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button
+                    type="button"
+                    class="btn btn-default"
+                    data-dismiss="modal"
+                >
+                    Close
+                </button>
+                {{ form_widget(formRemoveServerUser.submit, {'attr': {'class': 'btn btn-danger'
+
+
+
+
+
+
+
+                }}) }}
+            </div>
+            {{ form_end(formRemoveServerUser) }}
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+{% endif %} {% if formEditServer is not null %}
+<div class="modal fade" id="modal-edit-server" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            {{ form_start(formEditServer) }}
+            <div class="modal-header">
+                <h4 class="modal-title">Edit server</h4>
+                <button
+                    type="button"
+                    class="close"
+                    data-dismiss="modal"
+                    aria-label="Close"
+                >
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                {{ form_row(formEditServer.name) }}
+                {{ form_row(formEditServer.seed) }}
+                {{ form_row(formEditServer.password) }}
+                {{ form_row(formEditServer.instance) }}
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button
+                    type="button"
+                    class="btn btn-default"
+                    data-dismiss="modal"
+                >
+                    Close
+                </button>
+                {{ form_widget(formEditServer.submit) }}
+            </div>
+            {{ form_end(formEditServer) }}
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+{% endif %} {% if formAddServerUser is not null %}
+<div class="modal fade" id="modal-add-serveruser" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            {{ form_start(formAddServerUser) }}
+            <div class="modal-header">
+                <h4 class="modal-title">Add co-manager</h4>
+                <button
+                    type="button"
+                    class="close"
+                    data-dismiss="modal"
+                    aria-label="Close"
+                >
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                {{ form_row(formAddServerUser.user) }}
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button
+                    type="button"
+                    class="btn btn-default"
+                    data-dismiss="modal"
+                >
+                    Close
+                </button>
+                {{ form_widget(formAddServerUser.submit) }}
+            </div>
+            {{ form_end(formAddServerUser) }}
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+    {% endif %}
+</div>
+{% endblock %} {% block bottomjavascripts %}
 <script>
-    var SERVER_LOGS_URL='{{ path("server_logs", {id: server.id}) }}';
+    var SERVER_LOGS_URL = '{{ path("server_logs", {id: server.id}) }}';
 </script>
 {% endblock %}

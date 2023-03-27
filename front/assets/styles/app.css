@@ -10,3 +10,8 @@ span.dropdown-item.active {
     text-decoration: none;
     background-color: #f8f9fa;
 }
+
+#server-logs pre {
+    margin-bottom: 0;
+    padding: 0;
+}
