@@ -1,0 +1,61 @@
+{% extends 'base.html.twig' %} {% block title %}Hello ServerController!{%
+endblock %} {% block body %}
+<!-- Content Header (Page header) -->
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Games list</h1>
+            </div>
+            <!-- /.col -->
+        </div>
+        <!-- /.row -->
+    </div>
+    <!-- /.container-fluid -->
+</div>
+<!-- /.content-header -->
+
+<!-- Main content -->
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card card-primary card-outline card-actions">
+                    <div class="card-header">
+                        <h3 class="card-title">Games list</h3>
+                    </div>
+                    <div class="card-body">
+                        <table class="table">
+                            <tr>
+                                <th>Id</th>
+                                <th>Name</th>
+                                <th>Actions</th>
+                            </tr>
+                            {% for game in games %}
+                            <tr>
+                                <td>{{ game.id }}</td>
+                                <td>{{ game.name }}</td>
+                                <td>
+                                    <a
+                                        class="btn btn-primary"
+                                        href="{{
+                                            path('game_details', {
+                                                id: game.id
+                                            })
+                                        }}"
+                                        >Edit</a
+                                    >
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /.row -->
+    </div>
+    <!-- /.container-fluid -->
+</div>
+<!-- /.content -->
+{% endblock %}
