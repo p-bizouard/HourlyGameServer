@@ -33,7 +33,7 @@
           - gzip
           - unzip
           - bsdmainutils
-          - python
+          - python3
           - util-linux
           - ca-certificates
           - binutils
@@ -41,9 +41,9 @@
           - jq
           - tmux
           - netcat
-          - lib32gcc1
-          - lib32stdc++6
           - steamcmd
+          - lib32gcc-s1
+          - lib32stdc++6
           - libsdl2-2.0-0:i386
 
 - name: Add vhserver group

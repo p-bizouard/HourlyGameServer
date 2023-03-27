@@ -20,7 +20,7 @@
           - gzip
           - unzip
           - bsdmainutils
-          - python
+          - python3
           - util-linux
           - ca-certificates
           - python3-pip

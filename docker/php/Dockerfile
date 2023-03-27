@@ -30,10 +30,10 @@ RUN echo "date.timezone = Europe/Paris" >> /usr/local/etc/php/conf.d/timezone.in
 
 RUN npm install --global yarn gamedig
 
-# Install ansible & terraform
+# Install ansible & terraform=1.2.9 because the swift backend is not supported in terraform ^1.3
 RUN curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add - \
     && apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main" \
-    && apt update && apt install -y terraform python3-pip restic wget openssh-client \
+    && apt update && apt install -y terraform=1.2.9 python3-pip restic wget openssh-client \
     && apt-get autoremove && apt-get autoclean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -45,22 +45,10 @@ RUN pip3 install -r terraform-requirement.txt \
     && pip3 install -r ansible-requirement.txt \
     && rm terraform-requirement.txt ansible-requirement.txt
 
-RUN wget https://get.symfony.com/cli/installer -O - | bash && mv /root/.symfony/bin/symfony /usr/local/bin/symfony
+RUN wget https://get.symfony.com/cli/installer -O - | bash && mv /root/.symfony5/bin/symfony /usr/local/bin/symfony
 
 RUN mkdir /var/www/.ssh && chown www-data:www-data /var/www/.ssh && \
     mkdir /var/www/.ansible && chown www-data:www-data /var/www/.ansible
-
-# ARG USER_ID=1000
-# ARG GROUP_ID=1000
-# ARG USER=user
-
-#    $USER
-
-# RUN groupadd -g $GROUP_ID $USER && \
-#     useradd -u $USER_ID -s /bin/sh -g $USER --create-home $USER
-# RUN mkdir /home/$USER/.ssh && chown $USER:$USER /home/$USER/.ssh && \
-#     mkdir /.ansible && chown $USER:$USER /.ansible
-
 
 WORKDIR /app
 
